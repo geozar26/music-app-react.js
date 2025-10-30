@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 
 export default function MusicPlayer() {
@@ -57,7 +56,7 @@ export default function MusicPlayer() {
           width: "350px",
         }}
       >
-        <h2>🎵 Now Playing: {songs[currentSong].title}</h2>
+        <h2>🎵 music app: {songs[currentSong].title}</h2>
 
         {/* Προσθέτουμε key για να ξαναφορτώνει όταν αλλάζει */}
         <audio
