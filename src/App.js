@@ -1,5 +1,6 @@
+
 import React, { useState, useRef } from 'react';
-import { Search, Play, Heart, History } from 'lucide-react'; // Προσθήκη History icon
+import { Search, Play, Heart, Clock, Music } from 'lucide-react';
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "./db";
 import axios from 'axios';
@@ -12,33 +13,26 @@ const MusicApp = () => {
 
   const audioRef = useRef(new Audio());
 
-  // Favorites από IndexedDB
+  // Queries από τη βάση
   const favorites = useLiveQuery(() => db.favorites.toArray()) || [];
-
-  // Τελευταίες 5 αναζητήσεις για το Sidebar
-  const searches = useLiveQuery(() => 
-    db.searches.orderBy("id").reverse().limit(5).toArray()
-  ) || [];
+  const searches = useLiveQuery(() => db.searches.orderBy("id").reverse().limit(8).toArray()) || [];
 
   const searchTracks = async (e) => {
     if (e) e.preventDefault();
     if (!searchQuery.trim()) return;
 
     try {
-      await db.searches.add({ query: searchQuery.trim() });
-      const response = await axios.get(
-        "https://deezerdevs-deezer.p.rapidapi.com/search",
-        {
-          params: { q: searchQuery },
-          headers: {
-            'x-rapidapi-key': 'ΒΑΛΕ_ΕΔΩ_ΤΟ_ΚΛΕΙΔΙ_ΣΟΥ',
-            'x-rapidapi-host': 'deezerdevs-deezer.p.rapidapi.com'
-          }
+      await db.searches.add({ query: searchQuery.trim(), timestamp: Date.now() });
+      const response = await axios.get("https://deezerdevs-deezer.p.rapidapi.com/search", {
+        params: { q: searchQuery },
+        headers: {
+          'x-rapidapi-key': 'ΒΑΛΕ_ΕΔΩ_ΤΟ_ΚΛΕΙΔΙ_ΣΟΥ',
+          'x-rapidapi-host': 'deezerdevs-deezer.p.rapidapi.com'
         }
-      );
+      });
       setTracks(response.data.data || []);
     } catch (error) {
-      console.error(error);
+      console.error("Search error:", error);
     }
   };
 
@@ -71,134 +65,108 @@ const MusicApp = () => {
   };
 
   return (
-    <div className="flex h-screen bg-black text-white">
+    <div className="flex h-screen bg-black text-white font-sans">
+      
+      {/* SIDEBAR - Εδώ μπαίνουν όλα */}
+      <aside className="w-72 bg-black border-r border-zinc-800 flex flex-col">
+        <div className="p-6">
+          <h1 className="text-white font-black text-2xl tracking-tighter flex items-center gap-2 mb-8">
+            <Music className="text-green-500" /> BEATSTREAM
+          </h1>
 
-      {/* SIDEBAR */}
-      <div className="w-72 bg-zinc-950 border-r border-zinc-900 flex flex-col p-4 overflow-hidden">
-        <h1 className="text-green-500 font-bold mb-8 px-2 tracking-tighter italic text-2xl">
-          BEATSTREAM
-        </h1>
-
-        {/* ΕΝΟΤΗΤΑ ΑΓΑΠΗΜΕΝΑ */}
-        <div className="mb-8">
-            <h2 className="text-xs font-bold text-zinc-500 mb-4 px-2 uppercase tracking-widest flex items-center gap-2">
-            <Heart size={14} /> Αγαπημένα
+          {/* ΠΡΟΣΦΑΤΑ ΑΝΑΖΗΤΗΣΕΙΣ */}
+          <div className="mb-10">
+            <h2 className="text-zinc-500 text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-2">
+              <Clock size={14} /> Πρόσφατα
             </h2>
-            <div className="max-h-60 overflow-y-auto space-y-1 custom-scrollbar">
-            {favorites.length === 0 && <p className="text-xs text-zinc-600 px-2 italic">Κανένα αγαπημένο ακόμα</p>}
-            {favorites.map(track => (
-                <div
-                key={track.id}
-                onClick={() => playTrack(track)}
-                className="flex items-center gap-3 p-2 hover:bg-zinc-900 rounded-lg cursor-pointer group transition"
+            <div className="space-y-2">
+              {searches.map((s) => (
+                <div 
+                  key={s.id}
+                  onClick={() => { setSearchQuery(s.query); searchTracks(); }}
+                  className="bg-zinc-900/50 p-2 rounded text-sm text-zinc-300 hover:bg-zinc-800 cursor-pointer truncate transition"
                 >
-                <img src={track.albumArt} className="w-10 h-10 rounded shadow-md" alt="" />
-                <div className="flex-1 truncate">
-                    <div className="text-sm font-medium truncate group-hover:text-green-400 transition">{track.title}</div>
-                    <div className="text-xs text-zinc-500 truncate">{track.artist}</div>
+                  {s.query}
                 </div>
-                </div>
-            ))}
+              ))}
             </div>
-        </div>
+          </div>
 
-        {/* ΕΝΟΤΗΤΑ ΙΣΤΟΡΙΚΟ ΑΝΑΖΗΤΗΣΕΩΝ */}
-        <div className="flex-1 overflow-hidden flex flex-col">
-          <h2 className="text-xs font-bold text-zinc-500 mb-4 px-2 uppercase tracking-widest flex items-center gap-2">
-            <History size={14} /> Ιστορικό
-          </h2>
-          <div className="flex-1 overflow-y-auto space-y-1">
-            {searches.map(s => (
-              <div
-                key={s.id}
-                onClick={() => {
-                  setSearchQuery(s.query);
-                  // Προαιρετικά: Αυτόματη αναζήτηση όταν πατάς το ιστορικό
-                }}
-                className="flex items-center gap-3 px-3 py-2 text-zinc-400 hover:text-white hover:bg-zinc-900 rounded-lg cursor-pointer transition text-sm"
-              >
-                <Search size={14} className="opacity-50" />
-                <span className="truncate">{s.query}</span>
-              </div>
-            ))}
+          {/* ΑΓΑΠΗΜΕΝΑ */}
+          <div>
+            <h2 className="text-zinc-500 text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-2">
+              <Heart size={14} /> Αγαπημένα
+            </h2>
+            <div className="space-y-3 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
+              {favorites.map((track) => (
+                <div 
+                  key={track.id}
+                  onClick={() => playTrack(track)}
+                  className="flex items-center gap-3 group cursor-pointer"
+                >
+                  <img src={track.albumArt} alt="" className="w-10 h-10 rounded-md object-cover" />
+                  <div className="flex-1 truncate">
+                    <p className="text-sm font-medium truncate group-hover:text-green-500 transition">
+                      {track.title}
+                    </p>
+                    <p className="text-xs text-zinc-500 truncate">{track.artist}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      </aside>
 
-      {/* MAIN */}
-      <div className="flex-1 flex flex-col bg-zinc-900 overflow-hidden">
-
-        {/* SEARCH HEADER */}
-        <header className="p-6 bg-zinc-900/50 backdrop-blur-md border-b border-zinc-800/50 flex justify-center">
-          <form
-            onSubmit={searchTracks}
-            className="w-full max-w-xl relative"
-          >
-            <Search className="absolute left-4 top-3 text-zinc-400" size={20} />
-            <input
+      {/* MAIN CONTENT */}
+      <main className="flex-1 flex flex-col overflow-hidden bg-zinc-950">
+        
+        {/* TOP SEARCH BAR */}
+        <header className="p-4 flex justify-center items-center">
+          <form onSubmit={searchTracks} className="relative w-full max-w-lg">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
+            <input 
               type="text"
+              className="w-full bg-zinc-900 rounded-full py-2.5 px-12 border border-zinc-800 focus:border-green-500 outline-none transition"
+              placeholder="Τι θέλετε να ακούσετε;"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Αναζήτηση καλλιτεχνών ή τραγουδιών..."
-              className="w-full bg-zinc-800/50 hover:bg-zinc-800 focus:bg-zinc-800 transition-colors rounded-full py-3 px-12 border-none ring-1 ring-zinc-700 focus:ring-green-500 outline-none"
             />
           </form>
         </header>
 
-        {/* RESULTS GRID */}
-        <main className="flex-1 overflow-y-auto p-6 bg-gradient-to-b from-zinc-900 to-black">
+        {/* TRACKS GRID */}
+        <section className="flex-1 overflow-y-auto p-8">
+          <h2 className="text-3xl font-bold mb-6">Discover</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            {tracks.map(track => (
-              <div
-                key={track.id}
-                className="bg-zinc-800/30 p-4 rounded-2xl hover:bg-zinc-800/60 transition-all duration-300 group shadow-lg"
-              >
-                <div className="relative mb-4 overflow-hidden rounded-xl shadow-xl">
-                  <img
-                    src={track.album.cover_medium}
-                    className="w-full aspect-square object-cover transition-transform duration-500 group-hover:scale-105"
-                    alt={track.title}
-                  />
+            {tracks.map((track) => (
+              <div key={track.id} className="bg-zinc-900/40 p-4 rounded-xl hover:bg-zinc-900 transition-colors group">
+                <div className="relative mb-4">
+                  <img src={track.album.cover_medium} alt="" className="w-full aspect-square rounded-lg shadow-2xl" />
                   <button 
                     onClick={() => playTrack(track)}
-                    className="absolute bottom-3 right-3 bg-green-500 text-black p-3 rounded-full shadow-2xl opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 hover:scale-110"
+                    className="absolute bottom-2 right-2 bg-green-500 p-3 rounded-full text-black shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
                   >
-                    <Play size={20} fill="currentColor" />
+                    <Play size={20} fill="black" />
                   </button>
                 </div>
-                
-                <div className="flex justify-between items-start gap-2">
-                  <div className="truncate flex-1">
-                    <h3 className="font-bold text-sm truncate mb-1">{track.title}</h3>
+                <div className="flex justify-between items-start">
+                  <div className="truncate pr-2">
+                    <h3 className="font-bold text-sm truncate">{track.title}</h3>
                     <p className="text-xs text-zinc-400 truncate">{track.artist.name}</p>
                   </div>
-                  <button 
-                    onClick={() => toggleFavorite(track)}
-                    className="mt-1 transition-transform active:scale-125"
-                  >
-                    <Heart
-                      size={20}
-                      className={
-                        favorites.some(f => f.id === track.id)
-                          ? "fill-green-500 text-green-500"
-                          : "text-zinc-600 hover:text-zinc-400"
-                      }
+                  <button onClick={() => toggleFavorite(track)}>
+                    <Heart 
+                      size={20} 
+                      className={favorites.some(f => f.id === track.id) ? "fill-green-500 text-green-500" : "text-zinc-600"} 
                     />
                   </button>
                 </div>
               </div>
             ))}
           </div>
-          
-          {tracks.length === 0 && !searchQuery && (
-            <div className="h-full flex flex-col items-center justify-center text-zinc-500 italic">
-               <Search size={48} className="mb-4 opacity-20" />
-               <p>Ξεκινήστε την αναζήτηση για να βρείτε μουσική</p>
-            </div>
-          )}
-        </main>
-
-      </div>
+        </section>
+      </main>
     </div>
   );
 };
