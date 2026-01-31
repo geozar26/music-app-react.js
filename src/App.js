@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Search, Play, Heart } from 'lucide-react';
 import { useLiveQuery } from "dexie-react-hooks";
@@ -31,7 +30,7 @@ const MusicApp = () => {
 
     try {
       const response = await axios.get(
-        `https://deezerdevs-deezer.p.rapidapi.com/search`,
+        "https://deezerdevs-deezer.p.rapidapi.com/search",
         {
           params: { q: searchQuery },
           headers: {
@@ -40,7 +39,9 @@ const MusicApp = () => {
           }
         }
       );
+
       setTracks(response.data.data || []);
+      setShowHistory(false);
     } catch (error) {
       console.error(error);
     }
@@ -125,7 +126,6 @@ const MusicApp = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setShowHistory(true)}
-              onBlur={() => setTimeout(() => setShowHistory(false), 150)}
               placeholder="Αναζήτηση..."
               className="w-full bg-zinc-800 rounded-full py-2 px-12 border-none"
             />
@@ -176,4 +176,20 @@ const MusicApp = () => {
                   </button>
 
                   <button
-                    onClick={() => playTrac
+                    onClick={() => playTrack(track)}
+                    className="bg-green-500 text-black p-2 rounded-full"
+                  >
+                    <Play size={16} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </main>
+
+      </div>
+    </div>
+  );
+};
+
+export default MusicApp;
