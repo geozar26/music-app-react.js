@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Play, Pause, SkipForward, SkipBack, Heart, Music2, Volume2 } from 'lucide-react';
+import { Search, Play, Pause, Heart, Music2, Volume2 } from 'lucide-react';
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "./db";
 import axios from 'axios';
@@ -11,7 +12,6 @@ const MusicApp = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef(new Audio());
 
-  // Αυτό τραβάει τα τραγούδια με καρδιά από τη βάση σου
   const favorites = useLiveQuery(() => db.favorites.toArray()) || [];
 
   const searchTracks = async (e) => {
@@ -20,7 +20,7 @@ const MusicApp = () => {
       const response = await axios.get(`https://deezerdevs-deezer.p.rapidapi.com/search`, {
         params: { q: searchQuery },
         headers: {
-          'x-rapidapi-key': 'ΒΑΛΕ_ΕΔΩ_ΤΟ_ΚΛΕΙΔΙ_ΣΟΥ',
+          'x-rapidapi-key': 'ΒΑΛΕ_ΤΟ_ΚΛΕΙΔΙ_ΣΟΥ_ΕΔΩ',
           'x-rapidapi-host': 'deezerdevs-deezer.p.rapidapi.com'
         }
       });
@@ -56,10 +56,10 @@ const MusicApp = () => {
 
   return (
     <div className="flex h-screen bg-black text-white">
-      {/* ΑΡΙΣΤΕΡΗ ΜΠΑΡΑ - ΕΔΩ ΘΑ ΒΓΑΙΝΟΥΝ ΤΑ ΤΡΑΓΟΥΔΙΑ ΜΕ ΤΗΝ ΚΑΡΔΙΑ */}
+      {/* ΕΔΩ ΕΙΝΑΙ Η ΑΛΛΑΓΗ: Η SIDEBAR ΔΕΙΧΝΕΙ ΤΑ ΤΡΑΓΟΥΔΙΑ ΜΕ ΚΑΡΔΙΑ */}
       <div className="w-64 bg-zinc-950 border-r border-zinc-900 flex flex-col p-4">
         <h1 className="text-green-500 font-bold mb-8 flex items-center gap-2 px-2"><Music2 /> BEATSTREAM</h1>
-        <h2 className="text-xs font-bold text-zinc-500 mb-4 px-2 tracking-widest uppercase">Τα Αγαπημένα σου</h2>
+        <h2 className="text-xs font-bold text-zinc-500 mb-4 px-2 tracking-widest uppercase">ΑΓΑΠΗΜΕΝΑ ΤΡΑΓΟΥΔΙΑ</h2>
         <div className="flex-1 overflow-y-auto space-y-2">
           {favorites.map(track => (
             <div key={track.id} onClick={() => playTrack(track)} className="flex items-center gap-3 p-2 hover:bg-zinc-900 rounded-lg cursor-pointer group transition">
@@ -73,7 +73,6 @@ const MusicApp = () => {
         </div>
       </div>
 
-      {/* ΚΕΝΤΡΙΚΟ ΜΕΡΟΣ */}
       <div className="flex-1 flex flex-col bg-zinc-900 overflow-hidden">
         <header className="p-4 flex justify-center">
           <form onSubmit={searchTracks} className="w-full max-w-lg relative">
