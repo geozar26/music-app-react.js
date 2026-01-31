@@ -1,179 +1,203 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
-import { Search, Heart, ChevronLeft, Music, PlayCircle } from "lucide-react";
-import Dexie from "dexie";
+import React, { useState, useEffect, useRef } from 'react';
+// Αφαιρέθηκαν τα αχρησιμοποίητα ChevronLeft, ChevronRight για να περάσει το build της Vercel
+import { Search, Play, Pause, SkipForward, SkipBack, Heart, History, Volume2, Music2 } from 'lucide-react';
+import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "./db";
+import axios from 'axios';
 
-// Database Setup
-const db = new Dexie("MusicDatabase");
-db.version(1).stores({
-  favorites: "trackId, trackName, artistName, artworkUrl100, previewUrl" 
-});
-
-export default function MusicApp() {
-  const [query, setQuery] = useState("");
+const MusicApp = () => {
+  const [searchQuery, setSearchQuery] = useState('');
   const [tracks, setTracks] = useState([]);
-  const [favorites, setFavorites] = useState([]);
-  const [showFavorites, setShowFavorites] = useState(false);
+  const [currentTrack, setCurrentTrack] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const audioRef = useRef(new Audio());
+
+  const favorites = useLiveQuery(() => db.favorites.toArray()) || [];
+  const history = useLiveQuery(() => db.history.orderBy('timestamp').reverse().limit(20).toArray()) || [];
+
   useEffect(() => {
-    const loadFavorites = async () => {
-      const allFavs = await db.favorites.toArray();
-      setFavorites(allFavs);
+    const audio = audioRef.current;
+    
+    const handleEnded = () => setIsPlaying(false);
+    audio.addEventListener('ended', handleEnded);
+
+    return () => {
+      audio.removeEventListener('ended', handleEnded);
+      audio.pause();
     };
-    loadFavorites();
   }, []);
 
-  const handleBack = () => {
-    setQuery("");
-    setTracks([]);
-    setShowFavorites(false);
-  };
-
-  const searchSongs = async () => {
-    if (!query.trim()) return;
+  const searchTracks = async (e) => {
+    e.preventDefault();
+    if (!searchQuery) return;
     setLoading(true);
     try {
-      const response = await axios.get("https://itunes.apple.com/search", {
-        params: { term: query, media: "music", limit: 20 },
+      const response = await axios.get(`https://deezerdevs-deezer.p.rapidapi.com/search`, {
+        params: { q: searchQuery },
+        headers: {
+          'x-rapidapi-key': 'ΣΥΜΠΛΗΡΩΣΕ_ΤΟ_KEY_ΣΟΥ', // Βάλε το δικό σου key εδώ
+          'x-rapidapi-host': 'deezerdevs-deezer.p.rapidapi.com'
+        }
       });
-      setTracks(response.data.results);
-      setShowFavorites(false);
+      setTracks(response.data.data || []);
     } catch (error) {
-      console.error("Error searching:", error);
+      console.error("Search error:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const toggleFavorite = async (track) => {
-    const isFav = favorites.some(f => f.trackId === track.trackId);
-    if (isFav) {
-      await db.favorites.delete(track.trackId);
-    } else {
-      await db.favorites.add(track);
+  const playTrack = async (track) => {
+    if (currentTrack?.id === track.id) {
+      if (isPlaying) {
+        audioRef.current.pause();
+        setIsPlaying(false);
+      } else {
+        audioRef.current.play();
+        setIsPlaying(true);
+      }
+      return;
     }
-    const updatedFavs = await db.favorites.toArray();
-    setFavorites(updatedFavs);
+
+    audioRef.current.src = track.preview;
+    audioRef.current.play();
+    setCurrentTrack(track);
+    setIsPlaying(true);
+
+    await db.history.put({
+      id: track.id,
+      title: track.title,
+      artist: track.artist.name,
+      albumArt: track.album.cover_medium,
+      preview: track.preview,
+      timestamp: Date.now()
+    });
+  };
+
+  const toggleFavorite = async (track) => {
+    const isFav = favorites.some(f => f.id === track.id);
+    if (isFav) {
+      await db.favorites.delete(track.id);
+    } else {
+      await db.favorites.put({
+        id: track.id,
+        title: track.title,
+        artist: track.artist.name,
+        albumArt: track.album.cover_medium,
+        preview: track.preview
+      });
+    }
   };
 
   return (
-    <div style={{ 
-      minHeight: "100vh", 
-      background: "#0f172a", 
-      color: "white",
-      display: "flex", 
-      justifyContent: "center", 
-      fontFamily: "'Inter', system-ui, sans-serif" 
-    }}>
-      {/* RESPONSIVE CONTAINER */}
-      <div style={{ 
-        width: "100%", 
-        maxWidth: "1200px", // Απλώνει μέχρι τα 1200px
-        background: "rgba(30, 41, 59, 0.3)",
-        backdropFilter: "blur(20px)",
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        padding: "0 20px"
-      }}>
-        
-        {/* HEADER */}
-        <div style={{ padding: "30px 0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
-            <div style={{ background: "#38bdf8", padding: "8px", borderRadius: "10px", cursor: "pointer" }} onClick={handleBack}>
-              <Music size={24} color="#0f172a" />
-            </div>
-            <h1 style={{ margin: 0, fontSize: "24px", fontWeight: "800", letterSpacing: "-1px" }}>BEATSTREAM</h1>
-          </div>
-          
-          <button 
-            onClick={() => setShowFavorites(!showFavorites)}
-            style={{ border: "none", background: "rgba(255,255,255,0.05)", padding: "10px 15px", borderRadius: "12px", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", color: "white" }}
-          >
-            <Heart fill={showFavorites ? "#ef4444" : "none"} color={showFavorites ? "#ef4444" : "white"} size={22} />
-            <span style={{ fontWeight: "600" }}>Library</span>
-          </button>
-        </div>
+    <div className="min-h-screen bg-black text-white p-4 pb-32">
+      {/* Search Bar */}
+      <form onSubmit={searchTracks} className="max-w-2xl mx-auto mb-8 relative">
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Αναζήτηση τραγουδιών..."
+          className="w-full bg-zinc-900 border-none rounded-full py-3 px-12 focus:ring-2 focus:ring-green-500"
+        />
+        <Search className="absolute left-4 top-3 text-zinc-400" size={20} />
+      </form>
 
-        {/* SEARCH BAR (Center Aligned for Desktop) */}
-        <div style={{ maxWidth: "600px", margin: "0 auto 40px", width: "100%" }}>
-          <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-            <Search size={20} style={{ position: "absolute", left: "15px", color: "#64748b" }} />
-            <input
-              type="text"
-              placeholder="Search for tracks, artists..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && searchSongs()}
-              style={{ 
-                width: "100%", padding: "16px 16px 16px 50px", borderRadius: "18px", 
-                border: "1px solid rgba(255,255,255,0.1)", background: "#1e293b", 
-                color: "white", outline: "none", fontSize: "16px", boxShadow: "0 10px 30px rgba(0,0,0,0.2)"
-              }}
-            />
-          </div>
-        </div>
-
-        <h2 style={{ fontSize: "28px", marginBottom: "25px", fontWeight: "700" }}>
-          {showFavorites ? "Saved to Library" : query ? `Results for "${query}"` : "New Releases"}
-        </h2>
-
-        {/* RESPONSIVE GRID LAYOUT  */}
-        <div style={{ 
-          display: "grid", 
-          gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", 
-          gap: "20px", 
-          paddingBottom: "60px" 
-        }}>
-          {loading ? (
-            <div style={{ gridColumn: "1/-1", textAlign: "center", padding: "50px", color: "#38bdf8" }}>Tuning in...</div>
-          ) : (showFavorites ? favorites : tracks).length === 0 ? (
-            <div style={{ gridColumn: "1/-1", textAlign: "center", padding: "60px" }}>
-              <PlayCircle size={60} color="#1e293b" style={{ marginBottom: "15px" }} />
-              <p style={{ color: "#64748b", fontSize: "18px" }}>Search for a track to start the stream.</p>
-            </div>
-          ) : (showFavorites ? favorites : tracks).map((track) => {
-            const isFav = favorites.some(f => f.trackId === track.trackId);
-            return (
-              <div 
-                key={track.trackId} 
-                style={{ 
-                  display: "flex", alignItems: "center", gap: "15px", 
-                  padding: "15px", borderRadius: "20px", background: "rgba(255,255,255,0.03)",
-                  border: "1px solid rgba(255,255,255,0.05)", transition: "0.2s hover"
-                }}
-              >
-                <img src={track.artworkUrl100} alt="" style={{ width: "70px", height: "70px", borderRadius: "14px", objectFit: "cover" }} />
-                
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: "700", fontSize: "16px", marginBottom: "4px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {track.trackName}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {/* Results */}
+        <div className="md:col-span-2">
+          <h2 className="text-2xl font-bold mb-4">Αποτελέσματα</h2>
+          <div className="space-y-2">
+            {tracks.map(track => (
+              <div key={track.id} className="flex items-center justify-between bg-zinc-900/50 p-3 rounded-lg hover:bg-zinc-800 transition">
+                <div className="flex items-center gap-4">
+                  <img src={track.album.cover_small} alt={track.title} className="w-12 h-12 rounded" />
+                  <div>
+                    <div className="font-medium">{track.title}</div>
+                    <div className="text-sm text-zinc-400">{track.artist.name}</div>
                   </div>
-                  <div style={{ color: "#94a3b8", fontSize: "14px", marginBottom: "10px" }}>{track.artistName}</div>
-                  
-                  <audio 
-                    src={track.previewUrl} 
-                    controls 
-                    style={{ width: "100%", height: "28px", filter: "invert(100%) brightness(1.5)" }} 
-                  />
                 </div>
-
-                <button 
-                  onClick={() => toggleFavorite(track)}
-                  style={{ border: "none", background: "none", cursor: "pointer" }}
-                >
-                  <Heart 
-                    size={24} 
-                    color={isFav ? "#ef4444" : "#475569"} 
-                    fill={isFav ? "#ef4444" : "none"} 
-                  />
-                </button>
+                <div className="flex items-center gap-4">
+                  <button onClick={() => toggleFavorite(track)}>
+                    <Heart size={20} className={favorites.some(f => f.id === track.id) ? "fill-green-500 text-green-500" : "text-zinc-400"} />
+                  </button>
+                  <button onClick={() => playTrack(track)} className="bg-green-500 rounded-full p-2">
+                    {currentTrack?.id === track.id && isPlaying ? <Pause size={20} /> : <Play size={20} />}
+                  </button>
+                </div>
               </div>
-            );
-          })}
+            ))}
+          </div>
+        </div>
+
+        {/* Sidebar: Favorites & History */}
+        <div className="space-y-8">
+          <section>
+            <h2 className="flex items-center gap-2 text-xl font-bold mb-4 text-green-500">
+              <Heart size={20} /> Αγαπημένα
+            </h2>
+            <div className="space-y-2">
+              {favorites.map(track => (
+                <div key={track.id} className="flex items-center gap-3 bg-zinc-900/30 p-2 rounded">
+                  <img src={track.albumArt} className="w-10 h-10 rounded" alt="" />
+                  <div className="text-sm truncate flex-1">{track.title}</div>
+                  <button onClick={() => playTrack(track)}><Play size={16} /></button>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section>
+            <h2 className="flex items-center gap-2 text-xl font-bold mb-4 text-blue-500">
+              <History size={20} /> Ιστορικό
+            </h2>
+            <div className="space-y-2">
+              {history.map(track => (
+                <div key={`${track.id}-${track.timestamp}`} className="flex items-center gap-3 bg-zinc-900/30 p-2 rounded">
+                  <img src={track.albumArt} className="w-10 h-10 rounded" alt="" />
+                  <div className="text-sm truncate flex-1">{track.title}</div>
+                </div>
+              ))}
+            </div>
+          </section>
         </div>
       </div>
+
+      {/* Player Bar */}
+      {currentTrack && (
+        <div className="fixed bottom-0 left-0 right-0 bg-zinc-900 border-t border-zinc-800 p-4">
+          <div className="max-w-4xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <img src={currentTrack.album.cover_medium} alt="" className="w-14 h-14 rounded shadow-lg" />
+              <div>
+                <div className="font-bold">{currentTrack.title}</div>
+                <div className="text-sm text-zinc-400">{currentTrack.artist.name}</div>
+              </div>
+            </div>
+            
+            <div className="flex flex-col items-center gap-2">
+              <div className="flex items-center gap-6">
+                <button className="text-zinc-400 hover:text-white"><SkipBack /></button>
+                <button onClick={() => playTrack(currentTrack)} className="bg-white text-black rounded-full p-3 hover:scale-105 transition">
+                  {isPlaying ? <Pause /> : <Play />}
+                </button>
+                <button className="text-zinc-400 hover:text-white"><SkipForward /></button>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 text-zinc-400">
+              <Volume2 size={20} />
+              <div className="w-24 h-1 bg-zinc-700 rounded-full">
+                <div className="w-2/3 h-full bg-white rounded-full"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
-}
+};
+
+export default MusicApp;
