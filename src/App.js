@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Search, Play, Heart } from 'lucide-react';
 import { useLiveQuery } from "dexie-react-hooks";
@@ -14,23 +13,29 @@ const MusicApp = () => {
 
   const audioRef = useRef(new Audio());
 
+  // Favorites
   const favorites =
     useLiveQuery(() => db.favorites.toArray()) || [];
 
+  // Last 5 searches
   const searches =
     useLiveQuery(() =>
       db.searches.orderBy("id").reverse().limit(5).toArray()
     ) || [];
 
+  // Search function
   const searchTracks = async (e) => {
     e.preventDefault();
 
-    // 🔴 DEBUG
     console.log("SEARCH SUBMIT", searchQuery);
 
     if (searchQuery.trim()) {
-      await db.searches.add({ query: searchQuery.trim() });
-      console.log("SAVED TO DB");
+      try {
+        await db.searches.add({ query: searchQuery.trim() });
+        console.log("SAVED TO DB");
+      } catch (err) {
+        console.error("Dexie save error:", err);
+      }
     }
 
     try {
@@ -52,6 +57,7 @@ const MusicApp = () => {
     }
   };
 
+  // Play/Pause
   const playTrack = (track) => {
     if (!track.preview) return;
 
@@ -67,6 +73,7 @@ const MusicApp = () => {
     setIsPlaying(true);
   };
 
+  // Favorites toggle
   const toggleFavorite = async (track) => {
     const isFav = favorites.some(f => f.id === track.id);
 
@@ -155,4 +162,44 @@ const MusicApp = () => {
         </header>
 
         {/* RESULTS */}
-        <
+        <main className="flex-1 overflow-y-auto p-6 bg-black">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {tracks.map(track => (
+              <div
+                key={track.id}
+                className="bg-zinc-900 p-4 rounded-xl"
+              >
+                <img
+                  src={track.album.cover_medium}
+                  className="w-full rounded-lg mb-3"
+                  alt=""
+                />
+                <div className="flex justify-between items-center">
+                  <button onClick={() => toggleFavorite(track)}>
+                    <Heart
+                      size={20}
+                      className={
+                        favorites.some(f => f.id === track.id)
+                          ? "fill-green-500 text-green-500"
+                          : "text-zinc-500"
+                      }
+                    />
+                  </button>
+                  <button
+                    onClick={() => playTrack(track)}
+                    className="bg-green-500 text-black p-2 rounded-full"
+                  >
+                    <Play size={16} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </main>
+
+      </div>
+    </div>
+  );
+};
+
+export default MusicApp;
