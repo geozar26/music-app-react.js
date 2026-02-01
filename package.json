@@ -3,17 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@tailwindcss/postcss": "^4.1.18",
-    "autoprefixer": "^10.4.20",
+    "autoprefixer": "^10.4.24",
     "axios": "^1.7.9",
     "dexie": "^4.0.11",
     "dexie-react-hooks": "^1.1.1",
     "lucide-react": "^0.474.0",
-    "postcss": "^8.5.1",
+    "postcss": "^8.5.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-scripts": "5.0.1",
-    "tailwindcss": "^4.0.0"
+    "tailwindcss": "^3.4.1",
+    "web-vitals": "^5.1.0"
   },
   "scripts": {
     "start": "react-scripts start",
