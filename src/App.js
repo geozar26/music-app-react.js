@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Search, Play, Heart, Music, Library as LibraryIcon, X, MoreVertical, Download, Gauge } from 'lucide-react';
 import { useLiveQuery } from "dexie-react-hooks";
@@ -10,7 +9,7 @@ const MusicApp = () => {
   const [tracks, setTracks] = useState([]);
   const [view, setView] = useState('discover');
   const [showHistory, setShowHistory] = useState(false);
-  const [activeMenu, setActiveMenu] = useState(null); // State για το ποιο μενού είναι ανοιχτό
+  const [activeMenu, setActiveMenu] = useState(null);
 
   const favorites = useLiveQuery(() => db.favorites?.toArray()) || [];
   const searchHistory = useLiveQuery(() => db.searches?.orderBy('timestamp').reverse().toArray()) || [];
@@ -177,7 +176,6 @@ const MusicApp = () => {
             {(view === 'discover' ? tracks : favorites).map((track) => (
               <div key={track.id} className="bg-white/[0.03] p-4 rounded-2xl hover:bg-white/[0.07] transition-all group border border-white/5 relative hover:border-indigo-500/30 hover:-translate-y-1">
                 
-                {/* Track Image Section */}
                 <div className="relative mb-4 aspect-square overflow-hidden rounded-xl">
                   <img src={track.album?.cover_medium || track.albumArt} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                   <div className="absolute inset-0 bg-indigo-900/20 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -186,7 +184,6 @@ const MusicApp = () => {
                   </button>
                 </div>
 
-                {/* Info & Menu Section */}
                 <div className="flex justify-between items-start relative">
                   <div className="truncate pr-2 flex-1">
                     <h3 className="font-bold truncate text-zinc-100 group-hover:text-white transition-colors">{track.title}</h3>
@@ -194,12 +191,8 @@ const MusicApp = () => {
                   </div>
 
                   <div className="flex items-center gap-2 mt-1 shrink-0">
-                    {/* Heart Button */}
-                    <button onClick={() => toggleFavorite(track)} className="transition-transform hover:scale-125">
-                      <Heart size={18} className={favorites.some(f => f.id === track.id) ? "fill-red-500 text-red-500" : "text-zinc-700 hover:text-zinc-500"} />
-                    </button>
-
-                    {/* MORE MENU (Τρεις Γραμμές/Τελείες) */}
+                    
+                    {/* ΤΡΕΙΣ ΤΕΛΕΙΕΣ (ΑΡΙΣΤΕΡΑ ΑΠΟ ΤΗΝ ΚΑΡΔΙΑ) */}
                     <div className="relative">
                       <button 
                         onClick={(e) => {
@@ -212,18 +205,24 @@ const MusicApp = () => {
                       </button>
 
                       {activeMenu === track.id && (
-                        <div className="absolute bottom-full right-0 mb-3 w-44 bg-[#0d0d1a]/95 backdrop-blur-2xl border border-white/10 rounded-xl shadow-2xl z-[100] p-1 animate-in fade-in zoom-in duration-200">
-                          <button className="w-full flex items-center gap-3 px-3 py-2 text-[10px] font-black uppercase tracking-[0.1em] text-zinc-400 hover:bg-white/5 hover:text-indigo-400 rounded-lg transition-all">
+                        <div className="absolute bottom-full right-0 mb-3 w-48 bg-[#0d0d1a]/95 backdrop-blur-2xl border border-white/10 rounded-xl shadow-2xl z-[100] p-1 animate-in fade-in zoom-in duration-200">
+                          <button className="w-full flex items-center gap-3 px-3 py-2.5 text-[10px] font-black uppercase tracking-[0.1em] text-zinc-400 hover:bg-white/5 hover:text-indigo-400 rounded-lg transition-all">
                             <Gauge size={14} />
-                            Ταχύτητα Ήχου
+                            Ταχύτητα Αναπαραγωγής
                           </button>
-                          <button className="w-full flex items-center gap-3 px-3 py-2 text-[10px] font-black uppercase tracking-[0.1em] text-zinc-400 hover:bg-white/5 hover:text-indigo-400 rounded-lg transition-all">
+                          <button className="w-full flex items-center gap-3 px-3 py-2.5 text-[10px] font-black uppercase tracking-[0.1em] text-zinc-400 hover:bg-white/5 hover:text-indigo-400 rounded-lg transition-all">
                             <Download size={14} />
-                            Λήψη Βίντεο
+                            Λήψη Τραγουδιού
                           </button>
                         </div>
                       )}
                     </div>
+
+                    {/* Η ΚΑΡΔΙΑ (ΔΕΞΙΑ ΑΠΟ ΤΙΣ ΤΕΛΕΙΕΣ) */}
+                    <button onClick={() => toggleFavorite(track)} className="transition-transform hover:scale-125">
+                      <Heart size={18} className={favorites.some(f => f.id === track.id) ? "fill-red-500 text-red-500" : "text-zinc-700 hover:text-zinc-500"} />
+                    </button>
+
                   </div>
                 </div>
               </div>
@@ -232,7 +231,6 @@ const MusicApp = () => {
         </div>
       </main>
 
-      {/* Global overlay για να κλείνει το μενού πατώντας οπουδήποτε έξω */}
       {activeMenu && (
         <div className="fixed inset-0 z-[80]" onClick={() => setActiveMenu(null)} />
       )}
