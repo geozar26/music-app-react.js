@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Search, Play, Heart, Music, Library as LibraryIcon, X } from 'lucide-react';
 import { useLiveQuery } from "dexie-react-hooks";
@@ -79,7 +80,7 @@ const MusicApp = () => {
 
   return (
     <div className="flex h-screen bg-[#020205] text-white overflow-hidden font-sans text-sm">
-      {/* SIDEBAR - Darker Midnight Blue */}
+      {/* SIDEBAR */}
       <aside className="w-64 bg-[#080810] border-r border-white/5 flex flex-col shrink-0">
         <div className="p-5 flex flex-col h-full">
           <div className="flex items-center gap-2 mb-10 px-2 cursor-pointer group" onClick={() => setView('discover')}>
@@ -101,7 +102,7 @@ const MusicApp = () => {
         </div>
       </aside>
 
-      {/* MAIN CONTENT - Gradient Depth */}
+      {/* MAIN CONTENT */}
       <main className="flex-1 flex flex-col bg-gradient-to-br from-[#0d0d1a] to-[#020205]">
         <header className="p-4 flex items-center justify-between bg-black/20 backdrop-blur-xl border-b border-white/5 z-50">
           <div className="flex-1 max-w-lg relative">
@@ -138,7 +139,7 @@ const MusicApp = () => {
                           e.stopPropagation();
                           db.searches.delete(item.id);
                         }}
-                        className="opacity-0 group-hover:opacity-100 text-zinc-500 hover:text-red-500 transition"
+                        className="opacity-0 group-hover:opacity-100 text-zinc-500 hover:text-indigo-400 transition"
                       >
                         <X size={14} />
                       </button>
@@ -149,14 +150,17 @@ const MusicApp = () => {
             )}
           </div>
           
-          {/* MODERN BUTTONS SECTION */}
-          <div className="flex items-center gap-7 ml-6 mr-12 shrink-0">
-            <button className="bg-indigo-500/10 text-indigo-400 px-4 py-1.5 rounded-lg border border-indigo-500/20 font-bold uppercase text-[10px] tracking-[0.15em] hover:bg-indigo-500/20 transition-all">
-              Install
-            </button>
-            <button className="text-zinc-400 font-bold uppercase text-[10px] tracking-[0.15em] hover:text-white transition-colors">
-              Log In
-            </button>
+          {/* HEADER BUTTONS - ΣΠΡΩΓΜΕΝΑ ΠΡΟΣ ΤΑ ΑΡΙΣΤΕΡΑ ΜΕ GAP-10 */}
+          <div className="flex items-center gap-10 ml-6 mr-12 shrink-0">
+            <div className="flex items-center gap-7">
+              <button className="bg-indigo-500/10 text-indigo-400 px-4 py-1.5 rounded-lg border border-indigo-500/20 font-bold uppercase text-[10px] tracking-[0.15em] hover:bg-indigo-500/20 transition-all">
+                Install
+              </button>
+              <button className="text-zinc-400 font-bold uppercase text-[10px] tracking-[0.15em] hover:text-white transition-colors">
+                Log In
+              </button>
+            </div>
+            
             <button className="bg-gradient-to-r from-indigo-600 to-violet-600 text-white px-6 py-2 rounded-lg font-black uppercase text-[10px] tracking-[0.15em] shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:scale-105 active:scale-95 transition-all">
               Sign Up
             </button>
