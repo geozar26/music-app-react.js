@@ -26,7 +26,7 @@ const MusicApp = () => {
     audio.addEventListener('timeupdate', onTimeUpdate);
     audio.addEventListener('loadedmetadata', onLoadedMetadata);
     audio.addEventListener('ended', onEnded);
-    searchTracks(null, "Ελληνικά τραγούδια");
+    searchTracks(null, "Ελληνικά παιδικά");
     return () => {
       audio.removeEventListener('timeupdate', onTimeUpdate);
       audio.removeEventListener('loadedmetadata', onLoadedMetadata);
@@ -81,43 +81,43 @@ const MusicApp = () => {
       {/* MAIN CONTENT */}
       <main className="flex-1 flex flex-col bg-[#020205] relative pb-24">
         
-        {/* HEADER - ΤΩΡΑ ΕΙΝΑΙ ΟΠΩΣ Η ΦΩΤΟΓΡΑΦΙΑ ΣΟΥ */}
-        <header className="p-4 flex items-center justify-between">
+        {/* HEADER - ΕΠΑΝΑΦΟΡΑ ΚΟΥΜΠΙΩΝ ΟΠΩΣ ΣΤΙΣ ΦΩΤΟΓΡΑΦΙΕΣ */}
+        <header className="p-4 flex items-center">
           
-          {/* SEARCH BAR (ΠΕΡΙΟΡΙΣΜΕΝΗ ΑΡΙΣΤΕΡΑ) */}
-          <div className="w-[450px]">
+          {/* SEARCH BAR (ΑΡΙΣΤΕΡΑ) */}
+          <div className="w-[450px] shrink-0">
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
               <input 
-                type="text" className="w-full bg-[#111111] rounded-full py-2 px-10 border-none outline-none text-zinc-300"
-                placeholder="ελληνικά τραγούδια" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+                type="text" className="w-full bg-[#111111] rounded-xl py-2 px-10 border-none outline-none text-zinc-300"
+                placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && searchTracks(e)}
               />
             </div>
           </div>
 
-          {/* ΤΑ 3 ΚΟΥΜΠΙΑ ΔΙΠΛΑ-ΔΙΠΛΑ ΣΤΗΝ ΑΚΡΗ ΔΕΞΙΑ */}
-          <div className="flex items-center gap-8">
-            <button className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400 hover:text-white transition-colors">
-              Install
+          {/* ΤΑ 3 ΚΟΥΜΠΙΑ (ΔΕΞΙΑ) */}
+          <div className="flex-1 flex justify-end items-center gap-8 pr-4">
+            <button className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 hover:text-white transition-colors">
+              INSTALL
             </button>
-            <button className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400 hover:text-white transition-colors">
-              Log In
+            <button className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 hover:text-white transition-colors">
+              LOG IN
             </button>
-            <button className="bg-[#6366f1] hover:bg-[#5558e3] px-8 py-2.5 rounded-xl font-bold uppercase text-[10px] tracking-[0.2em] transition-all shadow-lg shadow-indigo-500/10">
-              Sign Up
+            <button className="bg-[#6366f1] hover:bg-[#5558e3] px-8 py-2.5 rounded-xl font-bold uppercase text-[10px] tracking-widest transition-all shadow-lg">
+              SIGN UP
             </button>
           </div>
         </header>
 
         {/* TRACKS GRID */}
         <div className="flex-1 overflow-y-auto p-8" onClick={() => setActiveMenu(null)}>
-          <h2 className="text-[44px] font-black uppercase italic mb-10 text-zinc-300 tracking-tighter">Discover</h2>
+          <h2 className="text-[44px] font-black uppercase italic mb-10 text-zinc-300 tracking-tighter">DISCOVER</h2>
           
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
             {tracks.map((track) => (
               <div key={track.id} className="bg-[#111111]/40 p-4 rounded-[2rem] group border border-white/5 relative">
-                <div className="relative mb-4 aspect-square rounded-[1.5rem] overflow-hidden shadow-2xl">
+                <div className="relative mb-4 aspect-square rounded-[1.5rem] overflow-hidden">
                   <img src={track.album?.cover_medium} className="w-full h-full object-cover" alt="" />
                   <button onClick={() => handlePlay(track)} className={`absolute inset-0 m-auto w-12 h-12 bg-indigo-500 rounded-full flex items-center justify-center transition-all ${playingTrack?.id === track.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                     {playingTrack?.id === track.id && !audioRef.current.paused ? <Pause size={20} fill="white" /> : <Play size={20} fill="white" className="ml-1" />}
@@ -132,17 +132,6 @@ const MusicApp = () => {
                     </button>
                   <Heart size={16} className="text-zinc-900" />
                 </div>
-                
-                {activeMenu === track.id && (
-                  <div className="absolute top-full left-0 mt-2 w-32 bg-[#0d0d1a] border border-white/10 rounded-xl shadow-2xl p-1 z-50">
-                    <button className="w-full flex items-center gap-2 px-3 py-2 text-[10px] uppercase font-bold text-zinc-400 hover:bg-white/5 rounded-lg">
-                       <Gauge size={14} /> Speed
-                    </button>
-                    <button className="w-full flex items-center gap-2 px-3 py-2 text-[10px] uppercase font-bold text-zinc-400 hover:bg-white/5 rounded-lg">
-                       <Download size={14} /> Get
-                    </button>
-                  </div>
-                )}
               </div>
             ))}
           </div>
@@ -151,8 +140,8 @@ const MusicApp = () => {
         {/* PLAYER */}
         {playingTrack && (
           <div className="fixed bottom-0 left-0 right-0 bg-black/95 backdrop-blur-xl border-t border-white/5 px-8 py-4 flex items-center justify-between z-[100]">
-            <div className="flex items-center gap-4 w-64">
-              <img src={playingTrack.album?.cover_medium} className="w-12 h-12 rounded-lg shadow-lg" alt="" />
+            <div className="flex items-center gap-4 w-64 shrink-0">
+              <img src={playingTrack.album?.cover_medium} className="w-12 h-12 rounded-lg" alt="" />
               <div className="truncate text-white font-bold text-sm">{playingTrack.title}</div>
             </div>
             <div className="flex-1 max-w-xl mx-auto flex items-center">
@@ -161,7 +150,7 @@ const MusicApp = () => {
               </div>
             </div>
             <div className="w-64 flex justify-end">
-              <button onClick={() => handlePlay(playingTrack)} className="w-10 h-10 bg-white text-black rounded-full flex items-center justify-center hover:scale-105 transition-transform">
+              <button onClick={() => handlePlay(playingTrack)} className="w-10 h-10 bg-white text-black rounded-full flex items-center justify-center">
                 {audioRef.current.paused ? <Play size={20} fill="black" className="ml-1" /> : <Pause size={20} fill="black" />}
               </button>
             </div>
