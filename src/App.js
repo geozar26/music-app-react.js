@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Play, Heart, Music, Library as LibraryIcon, X, MoreVertical, Download, Gauge, ChevronLeft, Pause } from 'lucide-react';
+import { 
+  Search, Play, Heart, Music, Library as LibraryIcon, 
+  X, MoreVertical, Download, Gauge, ChevronLeft, Pause 
+} from 'lucide-react';
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "./db";
 import axios from 'axios';
@@ -10,11 +13,12 @@ const MusicApp = () => {
   const [view, setView] = useState('discover');
   const [showHistory, setShowHistory] = useState(false);
   const [activeMenu, setActiveMenu] = useState(null);
+  
   const [playingTrack, setPlayingTrack] = useState(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
 
-  // ✅ Δημιουργία του ήχου απευθείας για να είναι πάντα έτοιμος
+  // ✅ Δημιουργία ήχου απευθείας στο Ref για να είναι πάντα έτοιμο
   const audioRef = useRef(new Audio());
 
   const favorites = useLiveQuery(() => db.favorites?.toArray()) || [];
@@ -22,34 +26,39 @@ const MusicApp = () => {
 
   useEffect(() => {
     const audio = audioRef.current;
-    const onTimeUpdate = () => setCurrentTime(audio.currentTime);
-    const onLoadedMetadata = () => setDuration(audio.duration);
-    const onEnded = () => setPlayingTrack(null);
+    
+    const updateProgress = () => setCurrentTime(audio.currentTime);
+    const updateDuration = () => setDuration(audio.duration);
+    const handleEnd = () => setPlayingTrack(null);
 
-    audio.addEventListener('timeupdate', onTimeUpdate);
-    audio.addEventListener('loadedmetadata', onLoadedMetadata);
-    audio.addEventListener('ended', onEnded);
+    audio.addEventListener('timeupdate', updateProgress);
+    audio.addEventListener('loadedmetadata', updateDuration);
+    audio.addEventListener('ended', handleEnd);
 
-    // Αρχικά τραγούδια
-    searchTracks(null, 'Greek hits');
+    // Αρχική αναζήτηση για να μην είναι άδεια η σελίδα
+    searchTracks(null, "Greek Hits");
 
     return () => {
-      audio.removeEventListener('timeupdate', onTimeUpdate);
-      audio.removeEventListener('loadedmetadata', onLoadedMetadata);
-      audio.removeEventListener('ended', onEnded);
+      audio.pause();
+      audio.removeEventListener('timeupdate', updateProgress);
+      audio.removeEventListener('loadedmetadata', updateDuration);
+      audio.removeEventListener('ended', handleEnd);
     };
   }, []);
 
-  const handlePlay = (track) => {
-    if (!track.preview) return;
+  const handlePlay = async (track) => {
+    if (!track.preview) {
+      alert("Αυτό το τραγούδι δεν έχει διαθέσιμο preview.");
+      return;
+    }
+
     const audio = audioRef.current;
-    
-    // ✅ FORCE HTTPS: Εδώ λύνεται το πρόβλημα που είδαμε στις φώτο σου
+    // ✅ Μετατροπή http -> https για να μην το κόβει ο browser στο Vercel
     const secureUrl = track.preview.replace("http://", "https://");
 
     if (playingTrack?.id === track.id) {
       if (audio.paused) {
-        audio.play().catch(e => console.error(e));
+        audio.play().catch(() => alert("Κάνε ένα κλικ στη σελίδα πρώτα!"));
       } else {
         audio.pause();
         setPlayingTrack(null);
@@ -57,10 +66,16 @@ const MusicApp = () => {
     } else {
       audio.pause();
       audio.src = secureUrl;
-      audio.load();
-      audio.play()
-        .then(() => setPlayingTrack(track))
-        .catch(e => console.error("Error playing sound:", e));
+      audio.load(); 
+      
+      try {
+        await audio.play();
+        setPlayingTrack(track);
+      } catch (error) {
+        console.error("Playback failed:", error);
+        // Πολλοί browsers μπλοκάρουν το play αν δεν έχεις κάνει κλικ στη σελίδα
+        alert("Ο ήχος μπλοκαρίστηκε. Πάτα οπουδήποτε στη σελίδα και μετά ξανά Play!");
+      }
     }
   };
 
@@ -79,13 +94,16 @@ const MusicApp = () => {
           'x-rapidapi-host': 'deezerdevs-deezer.p.rapidapi.com'
         }
       });
-      setTracks(res.data.data || []);
       
+      setTracks(res.data.data || []);
+
       if (db.searches && !queryOverride) {
         const exists = await db.searches.where('query').equals(q.toLowerCase()).count();
         if (!exists) await db.searches.add({ query: q.toLowerCase(), timestamp: Date.now() });
       }
-    } catch (e) { console.error("Search error:", e); }
+    } catch (err) {
+      console.error("Search error:", err);
+    }
   };
 
   const formatTime = (t) => {
@@ -97,6 +115,7 @@ const MusicApp = () => {
 
   return (
     <div className="flex h-screen bg-[#020205] text-white overflow-hidden font-sans">
+      
       {/* SIDEBAR */}
       <aside className="w-64 bg-[#080810] border-r border-white/5 flex flex-col p-5 shrink-0">
         <div className="flex items-center gap-2 mb-10 px-2 cursor-pointer" onClick={() => setView('discover')}>
@@ -104,19 +123,20 @@ const MusicApp = () => {
           <span className="font-black text-xl tracking-tighter uppercase italic">Beatstream</span>
         </div>
         <button onClick={() => setView('library')} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${view === 'library' ? 'bg-indigo-500/15 text-indigo-400' : 'text-zinc-500 hover:text-white'}`}>
-          <LibraryIcon size={20} /> <span className="font-black uppercase text-[11px]">Library</span>
+          <LibraryIcon size={20} />
+          <span className="font-black uppercase tracking-widest text-[11px]">Library</span>
         </button>
       </aside>
 
-      {/* MAIN */}
+      {/* MAIN CONTENT */}
       <main className="flex-1 flex flex-col bg-[#020205] relative pb-24">
-        <header className="p-4 bg-black/40 backdrop-blur-md border-b border-white/5 flex items-center justify-between z-50">
+        <header className="p-4 bg-black/20 backdrop-blur-xl border-b border-white/5 flex items-center justify-between z-50">
           <div className="flex-1 max-w-lg relative">
             <form onSubmit={searchTracks} className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
               <input 
                 type="text" className="w-full bg-white/5 rounded-xl py-2 px-10 border border-white/10 outline-none focus:border-indigo-500"
-                placeholder="Search songs..." value={searchQuery} onFocus={() => setShowHistory(true)} onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search..." value={searchQuery} onFocus={() => setShowHistory(true)} onChange={(e) => setSearchQuery(e.target.value)}
               />
             </form>
             {showHistory && searchHistory.length > 0 && (
@@ -133,55 +153,55 @@ const MusicApp = () => {
           <button className="bg-indigo-600 px-6 py-2 rounded-lg font-black uppercase text-[10px]">Sign Up</button>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-8" onClick={() => setShowHistory(false)}>
+        <div className="flex-1 overflow-y-auto p-8" onClick={() => { setShowHistory(false); setActiveMenu(null); }}>
           <div className="flex items-center gap-4 mb-8">
             {view === 'library' && <button onClick={() => setView('discover')} className="p-2 bg-white/5 rounded-full border border-white/10"><ChevronLeft /></button>}
-            <h2 className="text-4xl font-black uppercase italic">{view === 'discover' ? 'Discover' : 'Library'}</h2>
+            <h2 className="text-4xl font-black uppercase italic tracking-tighter">{view === 'discover' ? 'Discover' : 'Library'}</h2>
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
             {(view === 'discover' ? tracks : favorites).map((track) => (
-              <div key={track.id} className="bg-white/[0.03] p-4 rounded-2xl group border border-white/5 hover:bg-white/[0.07] transition-all relative">
+              <div key={track.id} className="bg-white/[0.03] p-4 rounded-2xl group border border-white/5 hover:bg-white/[0.07] transition-all">
                 <div className="relative mb-4 aspect-square rounded-xl overflow-hidden">
                   <img src={track.album?.cover_medium || track.albumArt} className="w-full h-full object-cover" alt="" />
-                  <button onClick={() => handlePlay(track)} className={`absolute inset-0 m-auto w-12 h-12 bg-indigo-500 rounded-full flex items-center justify-center shadow-xl transition-opacity ${playingTrack?.id === track.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                  <button onClick={() => handlePlay(track)} className={`absolute inset-0 m-auto w-12 h-12 bg-indigo-500 rounded-full flex items-center justify-center shadow-2xl transition-all ${playingTrack?.id === track.id ? 'opacity-100 scale-110' : 'opacity-0 group-hover:opacity-100 scale-100'}`}>
                     {playingTrack?.id === track.id ? <Pause fill="white" /> : <Play fill="white" className="ml-1" />}
                   </button>
                 </div>
-                <h3 className="font-bold truncate">{track.title}</h3>
-                <p className="text-xs text-zinc-500 truncate">{track.artist?.name || track.artist}</p>
-                <div className="flex justify-between mt-3">
-                    <button onClick={() => {
-                        const isFav = favorites.some(f => f.id === track.id);
-                        isFav ? db.favorites.delete(track.id) : db.favorites.add({id: track.id, title: track.title, artist: track.artist?.name || track.artist, albumArt: track.album?.cover_medium || track.albumArt, preview: track.preview});
-                    }}>
-                        <Heart size={18} className={favorites.some(f => f.id === track.id) ? "fill-red-500 text-red-500" : "text-zinc-700"} />
-                    </button>
-                    <MoreVertical size={18} className="text-zinc-700" />
+                <h3 className="font-bold truncate text-zinc-100">{track.title}</h3>
+                <p className="text-[11px] text-zinc-500 truncate">{track.artist?.name || track.artist}</p>
+                <div className="flex justify-between mt-3 items-center">
+                  <button onClick={() => {
+                      const isFav = favorites.some(f => f.id === track.id);
+                      isFav ? db.favorites.delete(track.id) : db.favorites.add({id: track.id, title: track.title, artist: track.artist?.name || track.artist, albumArt: track.album?.cover_medium || track.albumArt, preview: track.preview});
+                  }}>
+                    <Heart size={18} className={favorites.some(f => f.id === track.id) ? "fill-red-500 text-red-500" : "text-zinc-700"} />
+                  </button>
+                  <MoreVertical size={18} className="text-zinc-700" />
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* PLAYER BAR */}
+        {/* BOTTOM PLAYER BAR */}
         {playingTrack && (
-          <div className="fixed bottom-0 left-0 right-0 bg-black/90 backdrop-blur-2xl border-t border-white/10 p-4 flex items-center gap-6 z-[100]">
+          <div className="fixed bottom-0 left-0 right-0 bg-[#080810]/95 backdrop-blur-2xl border-t border-white/10 p-4 flex items-center gap-6 z-[100]">
             <div className="w-64 flex items-center gap-4 shrink-0">
-                <img src={playingTrack.album?.cover_medium || playingTrack.albumArt} className="w-12 h-12 rounded-lg" alt="" />
-                <div className="truncate"><p className="font-bold text-sm truncate">{playingTrack.title}</p></div>
+              <img src={playingTrack.album?.cover_medium || playingTrack.albumArt} className="w-12 h-12 rounded-lg" alt="" />
+              <div className="truncate"><p className="font-bold text-sm truncate">{playingTrack.title}</p></div>
             </div>
-            <div className="flex-1 max-w-2xl mx-auto flex flex-col items-center">
-                <div className="flex items-center gap-3 w-full">
-                    <span className="text-[10px] text-zinc-500">{formatTime(currentTime)}</span>
-                    <div className="flex-1 h-1 bg-white/10 rounded-full overflow-hidden">
-                        <div className="h-full bg-indigo-500 transition-all" style={{width: `${(currentTime/duration)*100}%`}}></div>
-                    </div>
-                    <span className="text-[10px] text-zinc-500">{formatTime(duration)}</span>
+            <div className="flex-1 max-w-2xl mx-auto flex flex-col items-center gap-1">
+              <div className="flex items-center gap-3 w-full">
+                <span className="text-[10px] font-mono text-zinc-500">{formatTime(currentTime)}</span>
+                <div className="flex-1 h-1 bg-white/10 rounded-full overflow-hidden">
+                  <div className="h-full bg-indigo-500 transition-all" style={{width: `${(currentTime/duration)*100}%`}}></div>
                 </div>
+                <span className="text-[10px] font-mono text-zinc-500">{formatTime(duration)}</span>
+              </div>
             </div>
-            <button onClick={() => handlePlay(playingTrack)} className="w-10 h-10 bg-white text-black rounded-full flex items-center justify-center shrink-0">
-                <Pause fill="black" />
+            <button onClick={() => handlePlay(playingTrack)} className="w-10 h-10 bg-white text-black rounded-full flex items-center justify-center shrink-0 hover:scale-110 transition-transform">
+              <Pause fill="black" />
             </button>
           </div>
         )}
