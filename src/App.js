@@ -16,50 +16,62 @@ const MusicApp = () => {
   const [showSearchHistory, setShowSearchHistory] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   
   const audioRef = useRef(new Audio());
   const favoriteTracks = useLiveQuery(() => db.tracks.toArray()) || [];
   const searchHistory = useLiveQuery(() => db.history.reverse().limit(6).toArray()) || [];
 
-  // Audio Listeners
+  // Αρχικό φόρτωμα τραγουδιών (Discover)
   useEffect(() => {
-    const audio = audioRef.current;
-    const onTimeUpdate = () => setCurrentTime(audio.currentTime);
-    const onLoadedMetadata = () => setDuration(audio.duration);
-    const onEnded = () => setPlayingTrack(null);
-    audio.addEventListener('timeupdate', onTimeUpdate);
-    audio.addEventListener('loadedmetadata', onLoadedMetadata);
-    audio.addEventListener('ended', onEnded);
-    fetchInitial();
-    return () => {
-      audio.removeEventListener('timeupdate', onTimeUpdate);
-      audio.removeEventListener('loadedmetadata', onLoadedMetadata);
-      audio.removeEventListener('ended', onEnded);
+    const fetchInitial = async () => {
+      try {
+        const res = await axios.get(`https://deezerdevs-deezer.p.rapidapi.com/search?q=trending`, {
+          headers: {
+            'x-rapidapi-key': '84e121a50dmsh4650b0d1f6e44fep1ebe78jsn56932706b2b1',
+            'x-rapidapi-host': 'deezerdevs-deezer.p.rapidapi.com'
+          }
+        });
+        setTracks(res.data.data || []);
+      } catch (err) {}
     };
+    fetchInitial();
   }, []);
 
-  const fetchInitial = async () => {
-    try {
-      const res = await axios.get(`https://deezerdevs-deezer.p.rapidapi.com/search?q=trending`, {
-        headers: {
-          'x-rapidapi-key': '84e121a50dmsh4650b0d1f6e44fep1ebe78jsn56932706b2b1',
-          'x-rapidapi-host': 'deezerdevs-deezer.p.rapidapi.com'
-        }
-      });
-      setTracks(res.data.data || []);
-    } catch (err) {}
-  };
+  // Διαχείριση Audio
+  useEffect(() => {
+    const audio = audioRef.current;
+    const updateTime = () => setCurrentTime(audio.currentTime);
+    const updateDuration = () => setDuration(audio.duration);
+    const handleEnded = () => { setIsAudioPlaying(false); setPlayingTrack(null); };
+
+    audio.addEventListener('timeupdate', updateTime);
+    audio.addEventListener('loadedmetadata', updateDuration);
+    audio.addEventListener('ended', handleEnded);
+    audio.addEventListener('play', () => setIsAudioPlaying(true));
+    audio.addEventListener('pause', () => setIsAudioPlaying(false));
+
+    return () => {
+      audio.removeEventListener('timeupdate', updateTime);
+      audio.removeEventListener('loadedmetadata', updateDuration);
+      audio.removeEventListener('ended', handleEnded);
+    };
+  }, []);
 
   const handlePlay = async (track) => {
     if (!track.preview) return;
     const audio = audioRef.current;
-    const secureUrl = track.preview.replace("http://", "https://");
+
     if (playingTrack?.id === track.id) {
-      audio.paused ? audio.play().catch(() => {}) : audio.pause();
+      if (audio.paused) {
+        audio.play().catch(e => console.log(e));
+      } else {
+        audio.pause();
+      }
     } else {
-      audio.pause();
-      audio.src = secureUrl;
-      try { await audio.play(); setPlayingTrack(track); } catch (e) {}
+      audio.src = track.preview.replace("http://", "https://");
+      setPlayingTrack(track);
+      audio.play().catch(e => console.log(e));
     }
   };
 
@@ -81,7 +93,7 @@ const MusicApp = () => {
   };
 
   return (
-    <div className="flex h-screen bg-[#020205] text-white overflow-hidden font-sans">
+    <div className="flex h-screen bg-[#020205] text-white overflow-hidden font-sans select-none">
       
       {/* SIDEBAR */}
       <aside className="w-64 bg-black flex flex-col shrink-0 p-6 border-r border-white/5">
@@ -91,10 +103,10 @@ const MusicApp = () => {
         </div>
         
         <div className="flex items-center">
-          {/* ΤΟ ΒΕΛΑΚΙ ΑΡΙΣΤΕΡΑ ΑΠΟ ΤΟ LIBRARY ΜΟΝΟ ΣΤΟ VIEW LIBRARY */}
+          {/* ΤΟ ΒΕΛΑΚΙ ΑΡΙΣΤΕΡΑ ΑΠΟ ΤΟ LIBRARY ΜΟΝΟ ΣΤΟ LIBRARY VIEW */}
           {view === 'library' && (
             <button onClick={() => setView('discover')} className="mr-2 text-indigo-500 hover:text-white transition-all">
-              <ChevronLeft size={18} />
+              <ChevronLeft size={20} />
             </button>
           )}
           <button 
@@ -115,7 +127,7 @@ const MusicApp = () => {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
               <input 
                 type="text" className="w-full bg-[#111111] rounded-xl py-2 px-10 border-none outline-none text-zinc-300"
-                placeholder="Αναζήτηση..." value={searchQuery} 
+                placeholder="Search..." value={searchQuery} 
                 onFocus={() => setShowSearchHistory(true)}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -138,7 +150,7 @@ const MusicApp = () => {
 
         {/* GRID */}
         <div className="flex-1 overflow-y-auto p-8" onClick={() => { setActiveMenu(null); setShowSearchHistory(false); }}>
-          <h2 className="text-[44px] font-black uppercase italic mb-10 text-zinc-300 tracking-tighter">
+          <h2 className="text-[44px] font-black uppercase italic mb-10 text-zinc-300 tracking-tighter italic">
             {view === 'discover' ? 'DISCOVER' : 'MY LIBRARY'}
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
@@ -146,18 +158,33 @@ const MusicApp = () => {
               const isLiked = favoriteTracks.some(t => t.id === track.id);
               return (
                 <div key={track.id} className="bg-[#111111]/40 p-4 rounded-[2rem] group border border-white/5 relative">
-                  <div className="relative mb-4 aspect-square rounded-[1.5rem] overflow-hidden">
+                  <div className="relative mb-4 aspect-square rounded-[1.5rem] overflow-hidden shadow-2xl">
                     <img src={track.album?.cover_medium} className="w-full h-full object-cover" alt="" />
-                    <button onClick={() => handlePlay(track)} className={`absolute inset-0 m-auto w-12 h-12 bg-indigo-500 rounded-full flex items-center justify-center transition-all ${playingTrack?.id === track.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                      {playingTrack?.id === track.id && !audioRef.current.paused ? <Pause size={20} fill="white" /> : <Play size={20} fill="white" className="ml-1" />}
+                    <button onClick={() => handlePlay(track)} className={`absolute inset-0 m-auto w-12 h-12 bg-indigo-500 rounded-full flex items-center justify-center transition-all ${playingTrack?.id === track.id ? 'opacity-100 scale-100' : 'opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100'}`}>
+                      {playingTrack?.id === track.id && isAudioPlaying ? <Pause size={20} fill="white" /> : <Play size={20} fill="white" className="ml-1" />}
                     </button>
                   </div>
                   <h3 className="font-bold truncate text-zinc-100">{track.title}</h3>
                   <p className="text-[11px] text-zinc-600 truncate mb-4">{track.artist?.name}</p>
                   <div className="flex justify-between items-center px-1">
                     <button onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === track.id ? null : track.id); }} className="text-zinc-600 hover:text-white"><MoreVertical size={16} /></button>
+                    {/* ΤΟ ΜΕΝΟΥ ΛΗΨΗ/ΤΑΧΥΤΗΤΑ */}
+                    {activeMenu === track.id && (
+                      <div className="absolute bottom-10 left-0 w-44 bg-[#18181b] border border-white/10 rounded-xl shadow-2xl z-50 p-2 overflow-hidden">
+                        <button onClick={() => window.open(track.preview)} className="w-full text-left px-3 py-2 text-[10px] font-bold hover:bg-white/5 rounded flex items-center gap-2 uppercase text-zinc-300">
+                           <Download size={14} /> Λήψη
+                        </button>
+                        <div className="h-[1px] bg-white/5 my-1" />
+                        <div className="px-3 py-1 text-[9px] text-zinc-500 font-bold uppercase tracking-widest flex items-center gap-2"><Gauge size={12}/> Ταχύτητα</div>
+                        <div className="flex justify-around p-1">
+                          {[1, 1.5, 2].map(s => (
+                            <button key={s} onClick={() => { audioRef.current.playbackRate = s; setActiveMenu(null); }} className="text-[10px] font-bold hover:text-indigo-400">{s}x</button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     <button onClick={() => isLiked ? db.tracks.delete(track.id) : db.tracks.add(track)}>
-                      <Heart size={18} className={`transition-all ${isLiked ? "text-red-500 fill-red-500" : "text-zinc-800"}`} />
+                      <Heart size={18} className={`transition-all duration-300 ${isLiked ? "text-red-500 fill-red-500 scale-110" : "text-zinc-800 hover:text-zinc-400"}`} />
                     </button>
                   </div>
                 </div>
@@ -178,8 +205,8 @@ const MusicApp = () => {
                 <div className="h-full bg-indigo-500" style={{ width: `${(currentTime/duration)*100}%` }} />
               </div>
             </div>
-            <button onClick={() => handlePlay(playingTrack)} className="w-10 h-10 bg-white text-black rounded-full flex items-center justify-center ml-4">
-              {audioRef.current.paused ? <Play size={20} fill="black" /> : <Pause size={20} fill="black" />}
+            <button onClick={() => handlePlay(playingTrack)} className="w-10 h-10 bg-white text-black rounded-full flex items-center justify-center ml-4 transition-transform active:scale-95 shadow-lg">
+              {isAudioPlaying ? <Pause size={20} fill="black" /> : <Play size={20} fill="black" className="ml-1" />}
             </button>
           </div>
         )}
