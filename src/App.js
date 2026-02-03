@@ -10,7 +10,6 @@ const MusicApp = () => {
   const [view, setView] = useState('discover');
   const [showHistory, setShowHistory] = useState(false);
 
-  // Queries από τη βάση με safety checks (|| [])
   const favorites = useLiveQuery(() => db.favorites?.toArray()) || [];
   const searchHistory = useLiveQuery(() => db.searches?.orderBy('timestamp').reverse().toArray()) || [];
 
@@ -31,7 +30,7 @@ const MusicApp = () => {
   }, []);
 
   const toggleFavorite = async (track) => {
-    if (!db.favorites) return; // Safety check
+    if (!db.favorites) return; 
     const isFav = favorites.some(f => f.id === track.id);
     if (isFav) {
       await db.favorites.delete(track.id);
@@ -79,37 +78,39 @@ const MusicApp = () => {
   });
 
   return (
-    <div className="flex h-screen bg-[#050505] text-white overflow-hidden font-sans text-sm">
-      {/* SIDEBAR */}
-      <aside className="w-64 bg-black border-r border-zinc-900 flex flex-col shrink-0">
+    <div className="flex h-screen bg-[#020205] text-white overflow-hidden font-sans text-sm">
+      {/* SIDEBAR - Darker Midnight Blue */}
+      <aside className="w-64 bg-[#080810] border-r border-white/5 flex flex-col shrink-0">
         <div className="p-5 flex flex-col h-full">
-          <div className="flex items-center gap-2 mb-10 px-2 cursor-pointer" onClick={() => setView('discover')}>
-            <Music className="text-green-500" size={24} />
-            <span className="font-black text-xl tracking-tighter uppercase italic">Beatstream</span>
+          <div className="flex items-center gap-2 mb-10 px-2 cursor-pointer group" onClick={() => setView('discover')}>
+            <Music className="text-indigo-500 group-hover:drop-shadow-[0_0_8px_rgba(99,102,241,0.8)] transition-all" size={24} />
+            <span className="font-black text-xl tracking-tighter uppercase italic bg-gradient-to-r from-white to-zinc-500 bg-clip-text text-transparent">Beatstream</span>
           </div>
 
           <button 
             onClick={() => setView('library')}
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all mb-4 ${
-              view === 'library' ? 'bg-green-500/20 text-green-500' : 'text-zinc-400 hover:bg-white/5'
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all mb-4 ${
+              view === 'library' 
+              ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/20' 
+              : 'text-zinc-500 hover:bg-white/5 hover:text-zinc-300'
             }`}
           >
             <LibraryIcon size={20} />
-            <span className="font-black uppercase tracking-widest">Library</span>
+            <span className="font-black uppercase tracking-widest text-[11px]">Library</span>
           </button>
         </div>
       </aside>
 
-      {/* MAIN CONTENT */}
-      <main className="flex-1 flex flex-col bg-[#0a0a0a]">
-        <header className="p-4 flex items-center justify-between bg-black/40 backdrop-blur-md border-b border-white/5 z-50">
+      {/* MAIN CONTENT - Gradient Depth */}
+      <main className="flex-1 flex flex-col bg-gradient-to-br from-[#0d0d1a] to-[#020205]">
+        <header className="p-4 flex items-center justify-between bg-black/20 backdrop-blur-xl border-b border-white/5 z-50">
           <div className="flex-1 max-w-lg relative">
             <form onSubmit={searchTracks} className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
               <input 
                 type="text"
-                className="w-full bg-zinc-900/60 rounded-full py-2 px-10 border border-zinc-800 focus:border-green-500 outline-none transition"
-                placeholder="Search..."
+                className="w-full bg-white/5 rounded-xl py-2 px-10 border border-white/10 focus:border-indigo-500/50 focus:bg-white/10 outline-none transition-all placeholder:text-zinc-600"
+                placeholder="Search music, artists..."
                 value={searchQuery}
                 onFocus={() => setShowHistory(true)}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -117,12 +118,12 @@ const MusicApp = () => {
             </form>
 
             {showHistory && filteredHistory.length > 0 && (
-              <div className="absolute top-full left-0 w-full mt-2 bg-[#121212] border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden z-50">
+              <div className="absolute top-full left-0 w-full mt-2 bg-[#0d0d1a]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50">
                 <div className="p-2">
                   {filteredHistory.map((item, idx) => (
                     <div 
                       key={idx}
-                      className="flex items-center justify-between px-4 py-2 hover:bg-zinc-800 rounded-xl cursor-pointer group"
+                      className="flex items-center justify-between px-4 py-2 hover:bg-white/5 rounded-xl cursor-pointer group"
                       onClick={() => {
                         setSearchQuery(item.query);
                         searchTracks(null, item.query);
@@ -148,35 +149,42 @@ const MusicApp = () => {
             )}
           </div>
           
-          {/* ΤΡΟΠΟΠΟΙΗΜΕΝΟ SECTION ΚΟΥΜΠΙΩΝ */}
+          {/* MODERN BUTTONS SECTION */}
           <div className="flex items-center gap-7 ml-6 mr-12 shrink-0">
-            <button className="bg-green-500/10 text-green-500 px-4 py-1.5 rounded-full border border-green-500/20 font-bold uppercase text-[11px]">Install</button>
-            <button className="text-zinc-400 font-bold uppercase text-[11px]">Log In</button>
-            <button className="bg-white text-black px-5 py-1.5 rounded-full font-bold uppercase text-[11px] shadow-lg">Sign Up</button>
+            <button className="bg-indigo-500/10 text-indigo-400 px-4 py-1.5 rounded-lg border border-indigo-500/20 font-bold uppercase text-[10px] tracking-[0.15em] hover:bg-indigo-500/20 transition-all">
+              Install
+            </button>
+            <button className="text-zinc-400 font-bold uppercase text-[10px] tracking-[0.15em] hover:text-white transition-colors">
+              Log In
+            </button>
+            <button className="bg-gradient-to-r from-indigo-600 to-violet-600 text-white px-6 py-2 rounded-lg font-black uppercase text-[10px] tracking-[0.15em] shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:scale-105 active:scale-95 transition-all">
+              Sign Up
+            </button>
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-8" onClick={() => setShowHistory(false)}>
-          <h2 className="text-3xl font-black mb-8 tracking-tighter uppercase italic">
-            {view === 'discover' ? 'Discover' : 'Your Library'}
+        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar" onClick={() => setShowHistory(false)}>
+          <h2 className="text-4xl font-black mb-8 tracking-tighter uppercase italic bg-gradient-to-b from-white to-zinc-600 bg-clip-text text-transparent">
+            {view === 'discover' ? 'Discover' : 'Library'}
           </h2>
           
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
             {(view === 'discover' ? tracks : favorites).map((track) => (
-              <div key={track.id} className="bg-zinc-900/30 p-4 rounded-2xl hover:bg-zinc-900/60 transition-all group border border-white/5 relative">
-                <div className="relative mb-4 aspect-square">
-                  <img src={track.album?.cover_medium || track.albumArt} alt="" className="w-full h-full rounded-xl object-cover" />
-                  <button className="absolute inset-0 m-auto w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-black opacity-0 group-hover:opacity-100 transition-all">
-                    <Play size={24} fill="black" />
+              <div key={track.id} className="bg-white/[0.03] p-4 rounded-2xl hover:bg-white/[0.07] transition-all group border border-white/5 relative hover:border-indigo-500/30 hover:-translate-y-1">
+                <div className="relative mb-4 aspect-square overflow-hidden rounded-xl">
+                  <img src={track.album?.cover_medium || track.albumArt} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                  <div className="absolute inset-0 bg-indigo-900/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <button className="absolute inset-0 m-auto w-14 h-14 bg-indigo-500 rounded-full flex items-center justify-center text-white opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all shadow-[0_0_15px_rgba(99,102,241,0.5)]">
+                    <Play size={24} fill="white" className="ml-1" />
                   </button>
                 </div>
                 <div className="flex justify-between items-start">
                   <div className="truncate pr-2">
-                    <h3 className="font-bold truncate">{track.title}</h3>
-                    <p className="text-[11px] text-zinc-500 truncate">{track.artist?.name || track.artist}</p>
+                    <h3 className="font-bold truncate text-zinc-100 group-hover:text-white transition-colors">{track.title}</h3>
+                    <p className="text-[11px] text-zinc-500 font-medium tracking-wide mt-0.5">{track.artist?.name || track.artist}</p>
                   </div>
-                  <button onClick={() => toggleFavorite(track)}>
-                    <Heart size={18} className={favorites.some(f => f.id === track.id) ? "fill-red-500 text-red-500" : "text-zinc-600"} />
+                  <button onClick={() => toggleFavorite(track)} className="mt-1 transition-transform hover:scale-125">
+                    <Heart size={18} className={favorites.some(f => f.id === track.id) ? "fill-red-500 text-red-500" : "text-zinc-700 hover:text-zinc-500"} />
                   </button>
                 </div>
               </div>
