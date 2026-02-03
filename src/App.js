@@ -55,7 +55,6 @@ const MusicApp = () => {
     setShowHistory(false);
 
     try {
-      // Διόρθωση: Έλεγχος αν το db.searches είναι undefined πριν το query
       if (db.searches) {
         const exists = await db.searches.where('query').equals(q.toLowerCase()).count();
         if (!exists) {
@@ -74,8 +73,6 @@ const MusicApp = () => {
     } catch (error) { console.error(error); }
   };
 
-  // Βελτιωμένο φιλτράρισμα: Αν η μπάρα είναι άδεια, δείχνει όλο το ιστορικό. 
-  // Αν γράφεις, δείχνει όσα ξεκινούν με αυτούς τους χαρακτήρες.
   const filteredHistory = (searchHistory || []).filter(h => {
     if (!searchQuery) return true;
     return h.query.toLowerCase().startsWith(searchQuery.toLowerCase());
@@ -119,7 +116,6 @@ const MusicApp = () => {
               />
             </form>
 
-            {/* DROPDOWN ΙΣΤΟΡΙΚΟΥ */}
             {showHistory && filteredHistory.length > 0 && (
               <div className="absolute top-full left-0 w-full mt-2 bg-[#121212] border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden z-50">
                 <div className="p-2">
@@ -152,7 +148,8 @@ const MusicApp = () => {
             )}
           </div>
           
-          <div className="flex items-center gap-4 ml-6 shrink-0">
+          {/* ΤΡΟΠΟΠΟΙΗΜΕΝΟ SECTION ΚΟΥΜΠΙΩΝ */}
+          <div className="flex items-center gap-7 ml-6 mr-12 shrink-0">
             <button className="bg-green-500/10 text-green-500 px-4 py-1.5 rounded-full border border-green-500/20 font-bold uppercase text-[11px]">Install</button>
             <button className="text-zinc-400 font-bold uppercase text-[11px]">Log In</button>
             <button className="bg-white text-black px-5 py-1.5 rounded-full font-bold uppercase text-[11px] shadow-lg">Sign Up</button>
