@@ -176,6 +176,7 @@ const MusicApp = () => {
             {(view === 'discover' ? tracks : favorites).map((track) => (
               <div key={track.id} className="bg-white/[0.03] p-4 rounded-2xl hover:bg-white/[0.07] transition-all group border border-white/5 relative hover:border-indigo-500/30 hover:-translate-y-1">
                 
+                {/* Track Image */}
                 <div className="relative mb-4 aspect-square overflow-hidden rounded-xl">
                   <img src={track.album?.cover_medium || track.albumArt} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                   <div className="absolute inset-0 bg-indigo-900/20 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -184,7 +185,8 @@ const MusicApp = () => {
                   </button>
                 </div>
 
-                <div className="flex justify-between items-start relative">
+                {/* Info & Actions */}
+                <div className="flex justify-between items-start">
                   <div className="truncate pr-2 flex-1">
                     <h3 className="font-bold truncate text-zinc-100 group-hover:text-white transition-colors">{track.title}</h3>
                     <p className="text-[11px] text-zinc-500 font-medium tracking-wide mt-0.5">{track.artist?.name || track.artist}</p>
@@ -192,25 +194,26 @@ const MusicApp = () => {
 
                   <div className="flex items-center gap-2 mt-1 shrink-0">
                     
-                    {/* ΤΡΕΙΣ ΤΕΛΕΙΕΣ (ΑΡΙΣΤΕΡΑ ΑΠΟ ΤΗΝ ΚΑΡΔΙΑ) */}
+                    {/* ΟΙ ΤΡΕΙΣ ΤΕΛΕΙΕΣ (ΠΡΩΤΑ) */}
                     <div className="relative">
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();
                           setActiveMenu(activeMenu === track.id ? null : track.id);
                         }}
-                        className={`transition-colors ${activeMenu === track.id ? 'text-indigo-400' : 'text-zinc-700 hover:text-indigo-400'}`}
+                        className={`transition-all hover:scale-110 ${activeMenu === track.id ? 'text-indigo-400' : 'text-zinc-700 hover:text-indigo-400'}`}
                       >
                         <MoreVertical size={18} />
                       </button>
 
+                      {/* Dropdown Μενού */}
                       {activeMenu === track.id && (
-                        <div className="absolute bottom-full right-0 mb-3 w-48 bg-[#0d0d1a]/95 backdrop-blur-2xl border border-white/10 rounded-xl shadow-2xl z-[100] p-1 animate-in fade-in zoom-in duration-200">
-                          <button className="w-full flex items-center gap-3 px-3 py-2.5 text-[10px] font-black uppercase tracking-[0.1em] text-zinc-400 hover:bg-white/5 hover:text-indigo-400 rounded-lg transition-all">
+                        <div className="absolute bottom-full right-0 mb-3 w-48 bg-[#0d0d1a]/98 backdrop-blur-2xl border border-white/10 rounded-xl shadow-2xl z-[100] p-1 animate-in fade-in zoom-in duration-200">
+                          <button className="w-full flex items-center gap-3 px-3 py-2.5 text-[10px] font-black uppercase tracking-wider text-zinc-400 hover:bg-white/5 hover:text-indigo-400 rounded-lg transition-all">
                             <Gauge size={14} />
                             Ταχύτητα Αναπαραγωγής
                           </button>
-                          <button className="w-full flex items-center gap-3 px-3 py-2.5 text-[10px] font-black uppercase tracking-[0.1em] text-zinc-400 hover:bg-white/5 hover:text-indigo-400 rounded-lg transition-all">
+                          <button className="w-full flex items-center gap-3 px-3 py-2.5 text-[10px] font-black uppercase tracking-wider text-zinc-400 hover:bg-white/5 hover:text-indigo-400 rounded-lg transition-all">
                             <Download size={14} />
                             Λήψη Τραγουδιού
                           </button>
@@ -218,7 +221,7 @@ const MusicApp = () => {
                       )}
                     </div>
 
-                    {/* Η ΚΑΡΔΙΑ (ΔΕΞΙΑ ΑΠΟ ΤΙΣ ΤΕΛΕΙΕΣ) */}
+                    {/* Η ΚΑΡΔΙΑ (ΔΕΥΤΕΡΗ) */}
                     <button onClick={() => toggleFavorite(track)} className="transition-transform hover:scale-125">
                       <Heart size={18} className={favorites.some(f => f.id === track.id) ? "fill-red-500 text-red-500" : "text-zinc-700 hover:text-zinc-500"} />
                     </button>
@@ -231,8 +234,9 @@ const MusicApp = () => {
         </div>
       </main>
 
+      {/* Overlay για κλείσιμο μενού */}
       {activeMenu && (
-        <div className="fixed inset-0 z-[80]" onClick={() => setActiveMenu(null)} />
+        <div className="fixed inset-0 z-[80] bg-black/5" onClick={() => setActiveMenu(null)} />
       )}
     </div>
   );
