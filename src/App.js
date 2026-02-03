@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Search, Play, Heart, Music, Library as LibraryIcon, 
@@ -19,32 +20,28 @@ const MusicApp = () => {
 
   const audioRef = useRef(new Audio());
 
-  // ΣΥΝΔΕΣΗ ΜΕ ΤΗ ΒΑΣΗ (DEXIE)
+  // ΣΥΝΔΕΣΗ ΜΕ ΤΗ ΒΑΣΗ (STORAGE) - Εδώ "ακούει" η εφαρμογή για αλλαγές
   const favoriteTracks = useLiveQuery(() => db.tracks.toArray()) || [];
   const searchHistory = useLiveQuery(() => db.history.reverse().limit(6).toArray()) || [];
 
   useEffect(() => {
-    // Αρχικά τραγούδια για να μην είναι άδειο το Discover
-    fetchTracks("top hits");
+    // Φέρνει τραγούδια αυτόματα για να μην είναι άδειο το Discover
+    fetchInitial();
 
     const audio = audioRef.current;
     const onTimeUpdate = () => setCurrentTime(audio.currentTime);
     const onLoadedMetadata = () => setDuration(audio.duration);
-    const onEnded = () => setPlayingTrack(null);
     audio.addEventListener('timeupdate', onTimeUpdate);
     audio.addEventListener('loadedmetadata', onLoadedMetadata);
-    audio.addEventListener('ended', onEnded);
-    
     return () => {
       audio.removeEventListener('timeupdate', onTimeUpdate);
       audio.removeEventListener('loadedmetadata', onLoadedMetadata);
-      audio.removeEventListener('ended', onEnded);
     };
   }, []);
 
-  const fetchTracks = async (q) => {
+  const fetchInitial = async () => {
     try {
-      const res = await axios.get(`https://deezerdevs-deezer.p.rapidapi.com/search?q=${q}`, {
+      const res = await axios.get(`https://deezerdevs-deezer.p.rapidapi.com/search?q=top-hits`, {
         headers: {
           'x-rapidapi-key': '84e121a50dmsh4650b0d1f6e44fep1ebe78jsn56932706b2b1',
           'x-rapidapi-host': 'deezerdevs-deezer.p.rapidapi.com'
@@ -58,15 +55,22 @@ const MusicApp = () => {
     if (e) e.preventDefault();
     const q = queryOverride || searchQuery;
     if (!q.trim()) return;
-    
-    await fetchTracks(q);
-    setView('discover');
-    setShowSearchHistory(false);
-    // Αποθήκευση στο ιστορικό της βάσης
-    await db.history.put({ id: q.toLowerCase(), term: q });
+    try {
+      const res = await axios.get(`https://deezerdevs-deezer.p.rapidapi.com/search?q=${q}`, {
+        headers: {
+          'x-rapidapi-key': '84e121a50dmsh4650b0d1f6e44fep1ebe78jsn56932706b2b1',
+          'x-rapidapi-host': 'deezerdevs-deezer.p.rapidapi.com'
+        }
+      });
+      setTracks(res.data.data || []);
+      setView('discover');
+      setShowSearchHistory(false);
+      // ΑΠΟΘΗΚΕΥΣΗ ΣΤΟ ΙΣΤΟΡΙΚΟ
+      await db.history.put({ id: q.toLowerCase(), term: q });
+    } catch (err) {}
   };
 
-  const handlePlay = async (track) => {
+  const handlePlay = (track) => {
     const audio = audioRef.current;
     if (playingTrack?.id === track.id) {
       audio.paused ? audio.play() : audio.pause();
@@ -95,7 +99,7 @@ const MusicApp = () => {
         </button>
       </aside>
 
-      <main className="flex-1 flex flex-col bg-[#020205] relative pb-24">
+      <main className="flex-1 flex flex-col bg-[#020205] relative pb-24 overflow-hidden">
         
         {/* HEADER */}
         <header className="p-4 flex items-center justify-between z-50">
@@ -104,13 +108,13 @@ const MusicApp = () => {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
               <input 
                 type="text" className="w-full bg-[#111111] rounded-xl py-2 px-10 border-none outline-none text-zinc-300"
-                placeholder="Αναζήτηση..." value={searchQuery} 
+                placeholder="Search..." value={searchQuery} 
                 onFocus={() => setShowSearchHistory(true)}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               />
             </div>
-            {/* SEARCH HISTORY DROPDOWN */}
+            {/* ΛΙΣΤΑ ΙΣΤΟΡΙΚΟΥ */}
             {showSearchHistory && searchHistory.length > 0 && (
               <div className="absolute top-full left-0 w-full mt-2 bg-[#0a0a0a] border border-white/10 rounded-xl shadow-2xl z-50 py-2">
                 {searchHistory.map((item) => (
@@ -121,11 +125,10 @@ const MusicApp = () => {
               </div>
             )}
           </div>
-
           <div className="flex items-center gap-8 pr-4">
-            <button className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">INSTALL</button>
-            <button className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">LOG IN</button>
-            <button className="bg-[#6366f1] px-8 py-2.5 rounded-xl font-bold uppercase text-[10px] tracking-widest">SIGN UP</button>
+            <button className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Install</button>
+            <button className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Log in</button>
+            <button className="bg-[#6366f1] px-8 py-2.5 rounded-xl font-bold uppercase text-[10px] tracking-widest hover:bg-indigo-500 transition-all">Sign up</button>
           </div>
         </header>
 
@@ -141,9 +144,10 @@ const MusicApp = () => {
               {view === 'discover' ? 'DISCOVER' : 'MY LIBRARY'}
             </h2>
           </div>
-          
+
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
             {(view === 'discover' ? tracks : favoriteTracks).map((track) => {
+              // ΕΛΕΓΧΟΣ ΑΝ ΕΙΝΑΙ ΗΔΗ LIKE
               const isLiked = favoriteTracks.some(t => t.id === track.id);
               return (
                 <div key={track.id} className="bg-[#111111]/40 p-4 rounded-[2rem] group border border-white/5 relative">
@@ -157,15 +161,18 @@ const MusicApp = () => {
                   <p className="text-[11px] text-zinc-600 truncate mb-4">{track.artist?.name}</p>
                   
                   <div className="flex justify-between items-center px-1">
-                    <button onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === track.id ? null : track.id); }} className="text-zinc-600">
+                    <button onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === track.id ? null : track.id); }} className="text-zinc-800 hover:text-white">
                       <MoreVertical size={16} />
                     </button>
 
-                    {/* Η ΚΑΡΔΙΑ ΠΟΥ ΑΠΟΘΗΚΕΥΕΙ ΚΑΙ ΓΙΝΕΤΑΙ ΚΟΚΚΙΝΗ */}
+                    {/* ΚΟΥΜΠΙ ΚΑΡΔΙΑΣ ΠΟΥ ΑΠΟΘΗΚΕΥΕΙ ΣΤΟ STORAGE */}
                     <button onClick={async (e) => {
                       e.stopPropagation();
-                      if (isLiked) { await db.tracks.delete(track.id); }
-                      else { await db.tracks.put(track); }
+                      if (isLiked) {
+                        await db.tracks.delete(track.id);
+                      } else {
+                        await db.tracks.put(track);
+                      }
                     }}>
                       <Heart 
                         size={18} 
@@ -182,8 +189,8 @@ const MusicApp = () => {
         {/* PLAYER */}
         {playingTrack && (
           <div className="fixed bottom-0 left-0 right-0 bg-black/95 backdrop-blur-xl border-t border-white/5 px-8 py-4 flex items-center justify-between z-[100]">
-            <div className="flex items-center gap-4 w-64 shrink-0">
-              <img src={playingTrack.album?.cover_medium} className="w-12 h-12 rounded-lg" alt="" />
+            <div className="flex items-center gap-4 w-64 shrink-0 text-left">
+              <img src={playingTrack.album?.cover_small} className="w-12 h-12 rounded-lg" alt="" />
               <div className="truncate text-white font-bold text-sm">{playingTrack.title}</div>
             </div>
             <div className="flex-1 max-w-xl mx-auto flex items-center px-4">
