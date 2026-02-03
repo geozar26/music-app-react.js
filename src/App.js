@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Search, Play, Heart, Music, Library as LibraryIcon, X } from 'lucide-react';
+import { Search, Play, Heart, Music, Library as LibraryIcon, X, MoreVertical, Download, Gauge } from 'lucide-react';
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "./db";
 import axios from 'axios';
@@ -10,6 +10,7 @@ const MusicApp = () => {
   const [tracks, setTracks] = useState([]);
   const [view, setView] = useState('discover');
   const [showHistory, setShowHistory] = useState(false);
+  const [activeMenu, setActiveMenu] = useState(null); // State για το ποιο μενού είναι ανοιχτό
 
   const favorites = useLiveQuery(() => db.favorites?.toArray()) || [];
   const searchHistory = useLiveQuery(() => db.searches?.orderBy('timestamp').reverse().toArray()) || [];
@@ -79,7 +80,8 @@ const MusicApp = () => {
   });
 
   return (
-    <div className="flex h-screen bg-[#020205] text-white overflow-hidden font-sans text-sm">
+    <div className="flex h-screen bg-[#020205] text-white overflow-hidden font-sans text-sm relative">
+      
       {/* SIDEBAR */}
       <aside className="w-64 bg-[#080810] border-r border-white/5 flex flex-col shrink-0">
         <div className="p-5 flex flex-col h-full">
@@ -119,7 +121,7 @@ const MusicApp = () => {
             </form>
 
             {showHistory && filteredHistory.length > 0 && (
-              <div className="absolute top-full left-0 w-full mt-2 bg-[#0d0d1a]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50">
+              <div className="absolute top-full left-0 w-full mt-2 bg-[#0d0d1a]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-[60]">
                 <div className="p-2">
                   {filteredHistory.map((item, idx) => (
                     <div 
@@ -150,7 +152,6 @@ const MusicApp = () => {
             )}
           </div>
           
-          {/* HEADER BUTTONS - ΣΠΡΩΓΜΕΝΑ ΠΡΟΣ ΤΑ ΑΡΙΣΤΕΡΑ ΜΕ GAP-10 */}
           <div className="flex items-center gap-10 ml-6 mr-12 shrink-0">
             <div className="flex items-center gap-7">
               <button className="bg-indigo-500/10 text-indigo-400 px-4 py-1.5 rounded-lg border border-indigo-500/20 font-bold uppercase text-[10px] tracking-[0.15em] hover:bg-indigo-500/20 transition-all">
@@ -167,7 +168,7 @@ const MusicApp = () => {
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar" onClick={() => setShowHistory(false)}>
+        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar" onClick={() => { setShowHistory(false); setActiveMenu(null); }}>
           <h2 className="text-4xl font-black mb-8 tracking-tighter uppercase italic bg-gradient-to-b from-white to-zinc-600 bg-clip-text text-transparent">
             {view === 'discover' ? 'Discover' : 'Library'}
           </h2>
@@ -175,6 +176,8 @@ const MusicApp = () => {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
             {(view === 'discover' ? tracks : favorites).map((track) => (
               <div key={track.id} className="bg-white/[0.03] p-4 rounded-2xl hover:bg-white/[0.07] transition-all group border border-white/5 relative hover:border-indigo-500/30 hover:-translate-y-1">
+                
+                {/* Track Image Section */}
                 <div className="relative mb-4 aspect-square overflow-hidden rounded-xl">
                   <img src={track.album?.cover_medium || track.albumArt} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                   <div className="absolute inset-0 bg-indigo-900/20 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -182,20 +185,57 @@ const MusicApp = () => {
                     <Play size={24} fill="white" className="ml-1" />
                   </button>
                 </div>
-                <div className="flex justify-between items-start">
-                  <div className="truncate pr-2">
+
+                {/* Info & Menu Section */}
+                <div className="flex justify-between items-start relative">
+                  <div className="truncate pr-2 flex-1">
                     <h3 className="font-bold truncate text-zinc-100 group-hover:text-white transition-colors">{track.title}</h3>
                     <p className="text-[11px] text-zinc-500 font-medium tracking-wide mt-0.5">{track.artist?.name || track.artist}</p>
                   </div>
-                  <button onClick={() => toggleFavorite(track)} className="mt-1 transition-transform hover:scale-125">
-                    <Heart size={18} className={favorites.some(f => f.id === track.id) ? "fill-red-500 text-red-500" : "text-zinc-700 hover:text-zinc-500"} />
-                  </button>
+
+                  <div className="flex items-center gap-2 mt-1 shrink-0">
+                    {/* Heart Button */}
+                    <button onClick={() => toggleFavorite(track)} className="transition-transform hover:scale-125">
+                      <Heart size={18} className={favorites.some(f => f.id === track.id) ? "fill-red-500 text-red-500" : "text-zinc-700 hover:text-zinc-500"} />
+                    </button>
+
+                    {/* MORE MENU (Τρεις Γραμμές/Τελείες) */}
+                    <div className="relative">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveMenu(activeMenu === track.id ? null : track.id);
+                        }}
+                        className={`transition-colors ${activeMenu === track.id ? 'text-indigo-400' : 'text-zinc-700 hover:text-indigo-400'}`}
+                      >
+                        <MoreVertical size={18} />
+                      </button>
+
+                      {activeMenu === track.id && (
+                        <div className="absolute bottom-full right-0 mb-3 w-44 bg-[#0d0d1a]/95 backdrop-blur-2xl border border-white/10 rounded-xl shadow-2xl z-[100] p-1 animate-in fade-in zoom-in duration-200">
+                          <button className="w-full flex items-center gap-3 px-3 py-2 text-[10px] font-black uppercase tracking-[0.1em] text-zinc-400 hover:bg-white/5 hover:text-indigo-400 rounded-lg transition-all">
+                            <Gauge size={14} />
+                            Ταχύτητα Ήχου
+                          </button>
+                          <button className="w-full flex items-center gap-3 px-3 py-2 text-[10px] font-black uppercase tracking-[0.1em] text-zinc-400 hover:bg-white/5 hover:text-indigo-400 rounded-lg transition-all">
+                            <Download size={14} />
+                            Λήψη Βίντεο
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         </div>
       </main>
+
+      {/* Global overlay για να κλείνει το μενού πατώντας οπουδήποτε έξω */}
+      {activeMenu && (
+        <div className="fixed inset-0 z-[80]" onClick={() => setActiveMenu(null)} />
+      )}
     </div>
   );
 };
