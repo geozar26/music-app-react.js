@@ -15,15 +15,29 @@ const MusicApp = () => {
   const [playingTrack, setPlayingTrack] = useState(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [showSearchHistory, setShowSearchHistory] = useState(false); // Για το ιστορικό
+  const [showSearchHistory, setShowSearchHistory] = useState(false);
 
   const audioRef = useRef(new Audio());
 
-  // ΣΥΝΔΕΣΗ ΜΕ DEXIE
+  // ΣΥΝΔΕΣΗ ΜΕ STORAGE
   const favoriteTracks = useLiveQuery(() => db.tracks.toArray()) || [];
   const searchHistory = useLiveQuery(() => db.history.reverse().limit(6).toArray()) || [];
 
+  // ΜΟΝΙΜΑ ΤΡΑΓΟΥΔΙΑ ΣΤΗΝ ΑΡΧΗ
   useEffect(() => {
+    const fetchInitial = async () => {
+      try {
+        const res = await axios.get(`https://deezerdevs-deezer.p.rapidapi.com/search?q=top-hits`, {
+          headers: {
+            'x-rapidapi-key': '84e121a50dmsh4650b0d1f6e44fep1ebe78jsn56932706b2b1',
+            'x-rapidapi-host': 'deezerdevs-deezer.p.rapidapi.com'
+          }
+        });
+        setTracks(res.data.data || []);
+      } catch (err) {}
+    };
+    fetchInitial();
+
     const audio = audioRef.current;
     const onTimeUpdate = () => setCurrentTime(audio.currentTime);
     const onLoadedMetadata = () => setDuration(audio.duration);
@@ -66,26 +80,24 @@ const MusicApp = () => {
       setTracks(res.data.data || []);
       setView('discover');
       setShowSearchHistory(false);
-      // Αποθήκευση στο ιστορικό
       await db.history.put({ id: q.toLowerCase(), term: q });
     } catch (err) {}
   };
 
-  // ΛΕΙΤΟΥΡΓΙΑ ΚΑΡΔΙΑΣ
+  // ΛΕΙΤΟΥΡΓΙΑ ΑΠΟΘΗΚΕΥΣΗΣ
   const toggleLike = async (e, track) => {
     e.stopPropagation();
     const isFav = favoriteTracks.some(t => t.id === track.id);
     if (isFav) {
       await db.tracks.delete(track.id);
     } else {
-      await db.tracks.add(track);
+      await db.tracks.put(track);
     }
   };
 
   return (
     <div className="flex h-screen bg-[#020205] text-white overflow-hidden font-sans text-sm">
       
-      {/* SIDEBAR */}
       <aside className="w-64 bg-black flex flex-col shrink-0 p-6">
         <div className="flex items-center gap-2 mb-10 cursor-pointer" onClick={() => setView('discover')}>
           <Music className="text-indigo-500" size={24} />
@@ -100,10 +112,8 @@ const MusicApp = () => {
         </button>
       </aside>
 
-      {/* MAIN CONTENT */}
       <main className="flex-1 flex flex-col bg-[#020205] relative pb-24">
         
-        {/* HEADER */}
         <header className="p-4 flex items-center justify-between z-50">
           <div className="w-[450px] shrink-0 relative">
             <div className="relative">
@@ -116,7 +126,7 @@ const MusicApp = () => {
                 onKeyDown={(e) => e.key === 'Enter' && searchTracks(e)}
               />
             </div>
-            {/* ΙΣΤΟΡΙΚΟ ΑΝΑΖΗΤΗΣΗΣ DROPDOWN */}
+            {/* ΙΣΤΟΡΙΚΟ DROPDOWN */}
             {showSearchHistory && searchHistory.length > 0 && (
               <div className="absolute top-full left-0 w-full mt-2 bg-[#0a0a0a] border border-white/10 rounded-xl shadow-2xl z-50 py-2">
                 {searchHistory.map((item) => (
@@ -135,10 +145,7 @@ const MusicApp = () => {
           </div>
         </header>
 
-        {/* TRACKS GRID */}
         <div className="flex-1 overflow-y-auto p-8" onClick={() => { setActiveMenu(null); setShowSearchHistory(false); }}>
-          
-          {/* ΤΙΤΛΟΣ ΜΕ ΒΕΛΑΚΙ ΟΠΩΣ ΤΟ ΗΘΕΛΕΣ */}
           <div className="flex items-center gap-4 mb-10">
             {view === 'library' && (
               <button onClick={() => setView('discover')} className="text-zinc-500 hover:text-white">
@@ -165,28 +172,11 @@ const MusicApp = () => {
                   <p className="text-[11px] text-zinc-600 truncate mb-4">{track.artist?.name}</p>
                   
                   <div className="flex justify-between items-center px-1">
-                    <div className="relative">
-                      <button onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === track.id ? null : track.id); }} className="text-zinc-600 hover:text-white">
-                        <MoreVertical size={16} />
-                      </button>
-                      
-                      {activeMenu === track.id && (
-                        <div className="absolute bottom-full left-0 mb-2 w-40 bg-[#18181b] border border-white/10 rounded-xl shadow-2xl z-[60] p-2">
-                          <button onClick={() => window.open(track.preview)} className="w-full text-left px-3 py-2 text-[10px] font-bold hover:bg-white/5 rounded flex items-center gap-2 uppercase text-zinc-300 transition-colors">
-                            <Download size={14} /> Λήψη
-                          </button>
-                          <div className="h-[1px] bg-white/5 my-1" />
-                          <div className="px-3 py-1 text-[9px] text-zinc-500 font-bold uppercase tracking-widest flex items-center gap-2"><Gauge size={12}/> Ταχύτητα</div>
-                          <div className="flex justify-around p-1">
-                            {[1, 1.5, 2].map(s => (
-                              <button key={s} onClick={() => { audioRef.current.playbackRate = s; setActiveMenu(null); }} className="text-[10px] font-bold hover:text-indigo-400">{s}x</button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                    <button onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === track.id ? null : track.id); }} className="text-zinc-600 hover:text-white">
+                      <MoreVertical size={16} />
+                    </button>
 
-                    {/* ΚΑΡΔΙΑ ΠΟΥ ΑΛΛΑΖΕΙ ΧΡΩΜΑ ΚΑΙ ΑΠΟΘΗΚΕΥΕΙ */}
+                    {/* ΕΔΩ ΕΙΝΑΙ Η ΔΙΟΡΘΩΣΗ ΓΙΑ ΤΗΝ ΚΑΡΔΙΑ */}
                     <button onClick={(e) => toggleLike(e, track)}>
                       <Heart 
                         size={18} 
@@ -200,7 +190,6 @@ const MusicApp = () => {
           </div>
         </div>
 
-        {/* PLAYER */}
         {playingTrack && (
           <div className="fixed bottom-0 left-0 right-0 bg-black/95 backdrop-blur-xl border-t border-white/5 px-8 py-4 flex items-center justify-between z-[100]">
             <div className="flex items-center gap-4 w-64 shrink-0">
