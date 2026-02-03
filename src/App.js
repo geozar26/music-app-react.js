@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Search, Play, Heart, Music, Library as LibraryIcon, 
@@ -21,8 +20,9 @@ const MusicApp = () => {
   
   const audioRef = useRef(new Audio());
 
-  const favoriteTracks = useLiveQuery(() => db.tracks.toArray()) || [];
-  const searchHistory = useLiveQuery(() => db.history.reverse().limit(6).toArray()) || [];
+  // ΣΥΝΔΕΣΗ ΜΕ ΒΑΣΗ: Αυτά τα queries κάνουν το UI να αντιδρά αμέσως
+  const favoriteTracks = useLiveQuery(() => db.tracks.toArray(), []) || [];
+  const searchHistory = useLiveQuery(() => db.history.reverse().limit(6).toArray(), []) || [];
 
   useEffect(() => {
     fetchInitial();
@@ -31,20 +31,17 @@ const MusicApp = () => {
     const onLoadedMetadata = () => setDuration(audio.duration);
     const onPlay = () => setIsAudioPlaying(true);
     const onPause = () => setIsAudioPlaying(false);
-    const onEnded = () => { setIsAudioPlaying(false); setPlayingTrack(null); };
-
+    
     audio.addEventListener('timeupdate', onTimeUpdate);
     audio.addEventListener('loadedmetadata', onLoadedMetadata);
     audio.addEventListener('play', onPlay);
     audio.addEventListener('pause', onPause);
-    audio.addEventListener('ended', onEnded);
 
     return () => {
       audio.removeEventListener('timeupdate', onTimeUpdate);
       audio.removeEventListener('loadedmetadata', onLoadedMetadata);
       audio.removeEventListener('play', onPlay);
       audio.removeEventListener('pause', onPause);
-      audio.removeEventListener('ended', onEnded);
     };
   }, []);
 
@@ -60,14 +57,25 @@ const MusicApp = () => {
     } catch (err) {}
   };
 
-  const handlePlay = (track) => {
-    const audio = audioRef.current;
-    if (playingTrack?.id === track.id) {
-      audio.paused ? audio.play() : audio.pause();
-    } else {
-      audio.src = track.preview.replace("http://", "https://");
-      setPlayingTrack(track);
-      audio.play();
+  // Η ΚΑΡΔΙΑ ΠΟΥ ΔΟΥΛΕΥΕΙ
+  const toggleLike = async (e, track) => {
+    e.stopPropagation();
+    try {
+      const isFav = favoriteTracks.some(t => t.id === track.id);
+      if (isFav) {
+        await db.tracks.delete(track.id);
+      } else {
+        // Αποθήκευση ολόκληρου του αντικειμένου για να φαίνεται στο Library
+        await db.tracks.put({
+          id: track.id,
+          title: track.title,
+          artist: track.artist,
+          album: track.album,
+          preview: track.preview
+        });
+      }
+    } catch (err) {
+      console.error("Σφάλμα στην αποθήκευση:", err);
     }
   };
 
@@ -84,8 +92,20 @@ const MusicApp = () => {
       setTracks(res.data.data || []);
       setView('discover');
       setShowSearchHistory(false);
+      // ΑΠΟΘΗΚΕΥΣΗ ΙΣΤΟΡΙΚΟΥ
       await db.history.put({ id: q.toLowerCase(), term: q });
     } catch (err) {}
+  };
+
+  const handlePlay = (track) => {
+    const audio = audioRef.current;
+    if (playingTrack?.id === track.id) {
+      audio.paused ? audio.play() : audio.pause();
+    } else {
+      audio.src = track.preview.replace("http://", "https://");
+      setPlayingTrack(track);
+      audio.play();
+    }
   };
 
   return (
@@ -117,6 +137,7 @@ const MusicApp = () => {
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               />
             </div>
+            {/* ΙΣΤΟΡΙΚΟ ΑΝΑΖΗΤΗΣΗΣ */}
             {showSearchHistory && searchHistory.length > 0 && (
               <div className="absolute top-full left-0 w-full mt-2 bg-[#0a0a0a] border border-white/10 rounded-xl shadow-2xl z-50 py-2">
                 {searchHistory.map((item) => (
@@ -128,7 +149,6 @@ const MusicApp = () => {
             )}
           </div>
           
-          {/* HEADER BUTTONS - LOG IN IS BACK */}
           <div className="flex items-center gap-8 pr-4">
             <button className="text-[10px] font-bold text-zinc-400 hover:text-white uppercase tracking-widest transition-colors">Install</button>
             <button className="text-[10px] font-bold text-zinc-400 hover:text-white uppercase tracking-widest transition-colors">Log in</button>
@@ -171,7 +191,7 @@ const MusicApp = () => {
                       </button>
                       
                       {activeMenu === track.id && (
-                        <div className="absolute bottom-full left-0 mb-2 w-40 bg-[#18181b] border border-white/10 rounded-xl shadow-2xl z-[60] p-2 animate-in fade-in zoom-in-95 duration-100">
+                        <div className="absolute bottom-full left-0 mb-2 w-40 bg-[#18181b] border border-white/10 rounded-xl shadow-2xl z-[60] p-2">
                           <button onClick={() => window.open(track.preview)} className="w-full text-left px-3 py-2 text-[10px] font-bold hover:bg-white/5 rounded flex items-center gap-2 uppercase text-zinc-300 transition-colors">
                             <Download size={14} /> Λήψη
                           </button>
@@ -186,7 +206,7 @@ const MusicApp = () => {
                       )}
                     </div>
 
-                    <button onClick={(e) => { e.stopPropagation(); isLiked ? db.tracks.delete(track.id) : db.tracks.add(track); }} className="active:scale-125 transition-transform duration-200">
+                    <button onClick={(e) => toggleLike(e, track)} className="active:scale-125 transition-transform">
                       <Heart size={18} className={`transition-all duration-300 ${isLiked ? "text-red-500 fill-red-500" : "text-zinc-800 hover:text-zinc-400"}`} />
                     </button>
                   </div>
