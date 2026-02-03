@@ -26,7 +26,9 @@ const MusicApp = () => {
     audio.addEventListener('timeupdate', onTimeUpdate);
     audio.addEventListener('loadedmetadata', onLoadedMetadata);
     audio.addEventListener('ended', onEnded);
-    searchTracks(null, "Ελληνικά παιδικά");
+    
+    // Αφαιρέθηκε η αυτόματη αναζήτηση παιδικών
+    
     return () => {
       audio.removeEventListener('timeupdate', onTimeUpdate);
       audio.removeEventListener('loadedmetadata', onLoadedMetadata);
@@ -81,30 +83,30 @@ const MusicApp = () => {
       {/* MAIN CONTENT */}
       <main className="flex-1 flex flex-col bg-[#020205] relative pb-24">
         
-        {/* HEADER - ΕΠΑΝΑΦΟΡΑ ΚΟΥΜΠΙΩΝ ΟΠΩΣ ΣΤΙΣ ΦΩΤΟΓΡΑΦΙΕΣ */}
-        <header className="p-4 flex items-center">
+        {/* HEADER - ΚΟΥΜΠΙΑ ΔΙΠΛΑ-ΔΙΠΛΑ ΟΠΩΣ ΣΤΗ ΦΩΤΟ */}
+        <header className="p-4 flex items-center justify-between">
           
-          {/* SEARCH BAR (ΑΡΙΣΤΕΡΑ) */}
+          {/* SEARCH BAR */}
           <div className="w-[450px] shrink-0">
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
               <input 
                 type="text" className="w-full bg-[#111111] rounded-xl py-2 px-10 border-none outline-none text-zinc-300"
-                placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Αναζήτηση..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && searchTracks(e)}
               />
             </div>
           </div>
 
-          {/* ΤΑ 3 ΚΟΥΜΠΙΑ (ΔΕΞΙΑ) */}
-          <div className="flex-1 flex justify-end items-center gap-8 pr-4">
+          {/* TA ΚΟΥΜΠΙΑ ΔΙΠΛΑ ΣΤΟ SIGN UP */}
+          <div className="flex items-center gap-8 pr-4">
             <button className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 hover:text-white transition-colors">
               INSTALL
             </button>
             <button className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 hover:text-white transition-colors">
               LOG IN
             </button>
-            <button className="bg-[#6366f1] hover:bg-[#5558e3] px-8 py-2.5 rounded-xl font-bold uppercase text-[10px] tracking-widest transition-all shadow-lg">
+            <button className="bg-[#6366f1] hover:bg-[#5558e3] px-8 py-2.5 rounded-xl font-bold uppercase text-[10px] tracking-widest transition-all">
               SIGN UP
             </button>
           </div>
@@ -112,12 +114,12 @@ const MusicApp = () => {
 
         {/* TRACKS GRID */}
         <div className="flex-1 overflow-y-auto p-8" onClick={() => setActiveMenu(null)}>
-          <h2 className="text-[44px] font-black uppercase italic mb-10 text-zinc-300 tracking-tighter">DISCOVER</h2>
+          <h2 className="text-[44px] font-black uppercase italic mb-10 text-zinc-300 tracking-tighter italic">DISCOVER</h2>
           
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
             {tracks.map((track) => (
               <div key={track.id} className="bg-[#111111]/40 p-4 rounded-[2rem] group border border-white/5 relative">
-                <div className="relative mb-4 aspect-square rounded-[1.5rem] overflow-hidden">
+                <div className="relative mb-4 aspect-square rounded-[1.5rem] overflow-hidden shadow-2xl">
                   <img src={track.album?.cover_medium} className="w-full h-full object-cover" alt="" />
                   <button onClick={() => handlePlay(track)} className={`absolute inset-0 m-auto w-12 h-12 bg-indigo-500 rounded-full flex items-center justify-center transition-all ${playingTrack?.id === track.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                     {playingTrack?.id === track.id && !audioRef.current.paused ? <Pause size={20} fill="white" /> : <Play size={20} fill="white" className="ml-1" />}
@@ -126,7 +128,7 @@ const MusicApp = () => {
                 <h3 className="font-bold truncate text-zinc-100">{track.title}</h3>
                 <p className="text-[11px] text-zinc-600 truncate mb-4">{track.artist?.name}</p>
                 
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center px-1">
                    <button onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === track.id ? null : track.id); }} className="text-zinc-800">
                       <MoreVertical size={16} />
                     </button>
