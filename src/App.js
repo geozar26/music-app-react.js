@@ -14,15 +14,28 @@ const MusicApp = () => {
   const [activeMenu, setActiveMenu] = useState(null);
   const [playingTrack, setPlayingTrack] = useState(null);
   const [showSearchHistory, setShowSearchHistory] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
   
   const audioRef = useRef(new Audio());
-
-  // Dexie Data
   const favoriteTracks = useLiveQuery(() => db.tracks.toArray()) || [];
   const searchHistory = useLiveQuery(() => db.history.reverse().limit(6).toArray()) || [];
 
+  // Audio Listeners
   useEffect(() => {
+    const audio = audioRef.current;
+    const onTimeUpdate = () => setCurrentTime(audio.currentTime);
+    const onLoadedMetadata = () => setDuration(audio.duration);
+    const onEnded = () => setPlayingTrack(null);
+    audio.addEventListener('timeupdate', onTimeUpdate);
+    audio.addEventListener('loadedmetadata', onLoadedMetadata);
+    audio.addEventListener('ended', onEnded);
     fetchInitial();
+    return () => {
+      audio.removeEventListener('timeupdate', onTimeUpdate);
+      audio.removeEventListener('loadedmetadata', onLoadedMetadata);
+      audio.removeEventListener('ended', onEnded);
+    };
   }, []);
 
   const fetchInitial = async () => {
@@ -35,6 +48,19 @@ const MusicApp = () => {
       });
       setTracks(res.data.data || []);
     } catch (err) {}
+  };
+
+  const handlePlay = async (track) => {
+    if (!track.preview) return;
+    const audio = audioRef.current;
+    const secureUrl = track.preview.replace("http://", "https://");
+    if (playingTrack?.id === track.id) {
+      audio.paused ? audio.play().catch(() => {}) : audio.pause();
+    } else {
+      audio.pause();
+      audio.src = secureUrl;
+      try { await audio.play(); setPlayingTrack(track); } catch (e) {}
+    }
   };
 
   const handleSearch = async (query) => {
@@ -54,17 +80,8 @@ const MusicApp = () => {
     } catch (err) {}
   };
 
-  const toggleLike = async (track) => {
-    const isFavorite = favoriteTracks.some(t => t.id === track.id);
-    if (isFavorite) {
-      await db.tracks.delete(track.id);
-    } else {
-      await db.tracks.put(track);
-    }
-  };
-
   return (
-    <div className="flex h-screen bg-[#020205] text-white overflow-hidden font-sans select-none">
+    <div className="flex h-screen bg-[#020205] text-white overflow-hidden font-sans">
       
       {/* SIDEBAR */}
       <aside className="w-64 bg-black flex flex-col shrink-0 p-6 border-r border-white/5">
@@ -73,20 +90,16 @@ const MusicApp = () => {
           <span className="font-black text-xl tracking-tighter uppercase italic">Beatstream</span>
         </div>
         
-        <div className="flex items-center gap-1">
-          {/* ΤΟ ΒΕΛΑΚΙ ΜΟΝΟ ΟΤΑΝ ΕΙΣΑΙ ΣΤΟ LIBRARY */}
+        <div className="flex items-center">
+          {/* ΤΟ ΒΕΛΑΚΙ ΑΡΙΣΤΕΡΑ ΑΠΟ ΤΟ LIBRARY ΜΟΝΟ ΣΤΟ VIEW LIBRARY */}
           {view === 'library' && (
-            <button 
-              onClick={() => setView('discover')}
-              className="p-1 hover:bg-white/10 rounded-full text-indigo-500 transition-all mr-1"
-            >
-              <ChevronLeft size={20} />
+            <button onClick={() => setView('discover')} className="mr-2 text-indigo-500 hover:text-white transition-all">
+              <ChevronLeft size={18} />
             </button>
           )}
-          
           <button 
             onClick={() => setView('library')}
-            className={`flex items-center gap-3 px-2 py-1 transition-colors ${view === 'library' ? 'text-white' : 'text-zinc-500 hover:text-white'}`}
+            className={`flex items-center gap-3 transition-colors ${view === 'library' ? 'text-white' : 'text-zinc-500 hover:text-white'}`}
           >
             <LibraryIcon size={18} />
             <span className="font-bold uppercase tracking-widest text-[10px]">Library</span>
@@ -101,84 +114,50 @@ const MusicApp = () => {
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
               <input 
-                type="text" className="w-full bg-[#111111] rounded-xl py-2 px-10 border-none outline-none text-zinc-300 focus:ring-1 focus:ring-indigo-500 transition-all"
+                type="text" className="w-full bg-[#111111] rounded-xl py-2 px-10 border-none outline-none text-zinc-300"
                 placeholder="Αναζήτηση..." value={searchQuery} 
                 onFocus={() => setShowSearchHistory(true)}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               />
             </div>
-
-            {/* SEARCH HISTORY DROPDOWN */}
             {showSearchHistory && searchHistory.length > 0 && (
-              <div className="absolute top-full left-0 w-full mt-2 bg-[#0a0a0a] border border-white/10 rounded-xl shadow-2xl z-[100] py-2">
-                {searchHistory
-                  .filter(h => h.term.toLowerCase().startsWith(searchQuery.toLowerCase()))
-                  .map((item) => (
-                    <button 
-                      key={item.id}
-                      onClick={() => { setSearchQuery(item.term); handleSearch(item.term); }}
-                      className="w-full text-left px-10 py-2.5 hover:bg-white/5 text-zinc-400 hover:text-white text-xs flex items-center gap-3 transition-colors"
-                    >
-                      <History size={14} className="text-zinc-600" /> {item.term}
-                    </button>
+              <div className="absolute top-full left-0 w-full mt-2 bg-[#0a0a0a] border border-white/10 rounded-xl shadow-2xl z-50 py-2">
+                {searchHistory.filter(h => h.term.toLowerCase().startsWith(searchQuery.toLowerCase())).map((item) => (
+                  <button key={item.id} onClick={() => { setSearchQuery(item.term); handleSearch(item.term); }} className="w-full text-left px-10 py-2 hover:bg-white/5 text-zinc-400 text-xs flex items-center gap-3"><History size={14} /> {item.term}</button>
                 ))}
               </div>
             )}
           </div>
-
           <div className="flex items-center gap-8 pr-4">
-            <button className="text-[10px] font-bold text-zinc-400 hover:text-white tracking-widest">INSTALL</button>
-            <button className="text-[10px] font-bold text-zinc-400 hover:text-white tracking-widest">LOG IN</button>
-            <button className="bg-[#6366f1] px-8 py-2.5 rounded-xl font-bold text-[10px] tracking-widest hover:bg-[#5558e3] transition-all">SIGN UP</button>
+            <button className="text-[10px] font-bold text-zinc-400 hover:text-white uppercase tracking-widest">Install</button>
+            <button className="text-[10px] font-bold text-zinc-400 hover:text-white uppercase tracking-widest">Log in</button>
+            <button className="bg-[#6366f1] px-8 py-2.5 rounded-xl font-bold uppercase text-[10px] tracking-widest">Sign up</button>
           </div>
         </header>
 
-        {/* CONTENT */}
+        {/* GRID */}
         <div className="flex-1 overflow-y-auto p-8" onClick={() => { setActiveMenu(null); setShowSearchHistory(false); }}>
           <h2 className="text-[44px] font-black uppercase italic mb-10 text-zinc-300 tracking-tighter">
             {view === 'discover' ? 'DISCOVER' : 'MY LIBRARY'}
           </h2>
-          
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
             {(view === 'discover' ? tracks : favoriteTracks).map((track) => {
               const isLiked = favoriteTracks.some(t => t.id === track.id);
               return (
-                <div key={track.id} className="bg-[#111111]/40 p-4 rounded-[2rem] group border border-white/5 relative hover:border-white/10 transition-all">
-                  <div className="relative mb-4 aspect-square rounded-[1.5rem] overflow-hidden shadow-2xl">
-                    <img src={track.album?.cover_medium} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="" />
-                    <button className="absolute inset-0 m-auto w-12 h-12 bg-indigo-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-xl">
-                      <Play size={20} fill="white" className="ml-1" />
+                <div key={track.id} className="bg-[#111111]/40 p-4 rounded-[2rem] group border border-white/5 relative">
+                  <div className="relative mb-4 aspect-square rounded-[1.5rem] overflow-hidden">
+                    <img src={track.album?.cover_medium} className="w-full h-full object-cover" alt="" />
+                    <button onClick={() => handlePlay(track)} className={`absolute inset-0 m-auto w-12 h-12 bg-indigo-500 rounded-full flex items-center justify-center transition-all ${playingTrack?.id === track.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                      {playingTrack?.id === track.id && !audioRef.current.paused ? <Pause size={20} fill="white" /> : <Play size={20} fill="white" className="ml-1" />}
                     </button>
                   </div>
-                  
                   <h3 className="font-bold truncate text-zinc-100">{track.title}</h3>
                   <p className="text-[11px] text-zinc-600 truncate mb-4">{track.artist?.name}</p>
-                  
                   <div className="flex justify-between items-center px-1">
-                    <button onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === track.id ? null : track.id); }} className="text-zinc-600 hover:text-white transition-colors">
-                      <MoreVertical size={16} />
-                    </button>
-                    
-                    {/* MORE MENU */}
-                    {activeMenu === track.id && (
-                      <div className="absolute bottom-12 left-4 w-44 bg-[#18181b] border border-white/10 rounded-xl shadow-2xl z-50 p-2 animate-in fade-in zoom-in-95 duration-100">
-                        <button onClick={() => window.open(track.preview)} className="w-full text-left px-3 py-2 text-[10px] font-bold hover:bg-white/5 rounded flex items-center gap-2 uppercase text-zinc-300">
-                          <Download size={14} /> Λήψη Τραγουδιού
-                        </button>
-                        <div className="h-[1px] bg-white/5 my-1" />
-                        <div className="px-3 py-1 text-[9px] text-zinc-500 font-bold uppercase tracking-widest flex items-center gap-2"><Gauge size={12}/> Ταχύτητα</div>
-                        <div className="flex justify-around p-1">
-                          {[1, 1.5, 2].map(s => <button key={s} className="text-[10px] font-bold hover:text-indigo-400">{s}x</button>)}
-                        </div>
-                      </div>
-                    )}
-                    
-                    <button onClick={() => toggleLike(track)} className="transition-transform active:scale-125">
-                      <Heart 
-                        size={18} 
-                        className={`transition-all duration-300 ${isLiked ? "text-red-500 fill-red-500" : "text-zinc-800 hover:text-zinc-400"}`} 
-                      />
+                    <button onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === track.id ? null : track.id); }} className="text-zinc-600 hover:text-white"><MoreVertical size={16} /></button>
+                    <button onClick={() => isLiked ? db.tracks.delete(track.id) : db.tracks.add(track)}>
+                      <Heart size={18} className={`transition-all ${isLiked ? "text-red-500 fill-red-500" : "text-zinc-800"}`} />
                     </button>
                   </div>
                 </div>
@@ -186,6 +165,24 @@ const MusicApp = () => {
             })}
           </div>
         </div>
+
+        {/* PLAYER */}
+        {playingTrack && (
+          <div className="fixed bottom-0 left-0 right-0 bg-black/95 backdrop-blur-xl border-t border-white/5 px-8 py-4 flex items-center justify-between z-[100]">
+            <div className="flex items-center gap-4 w-64">
+              <img src={playingTrack.album?.cover_small} className="w-12 h-12 rounded-lg" alt="" />
+              <div className="truncate"><div className="text-white font-bold text-sm truncate">{playingTrack.title}</div></div>
+            </div>
+            <div className="flex-1 max-w-xl mx-auto flex items-center gap-4">
+              <div className="flex-1 h-[2px] bg-white/5 rounded-full overflow-hidden">
+                <div className="h-full bg-indigo-500" style={{ width: `${(currentTime/duration)*100}%` }} />
+              </div>
+            </div>
+            <button onClick={() => handlePlay(playingTrack)} className="w-10 h-10 bg-white text-black rounded-full flex items-center justify-center ml-4">
+              {audioRef.current.paused ? <Play size={20} fill="black" /> : <Pause size={20} fill="black" />}
+            </button>
+          </div>
+        )}
       </main>
     </div>
   );
