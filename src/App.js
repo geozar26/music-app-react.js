@@ -21,6 +21,7 @@ const MusicApp = () => {
 
   useEffect(() => {
     const audio = audioRef.current;
+    
     const updateProgress = () => setCurrentTime(audio.currentTime);
     const updateDuration = () => setDuration(audio.duration);
     const handleEnd = () => setPlayingTrack(null);
@@ -29,33 +30,46 @@ const MusicApp = () => {
     audio.addEventListener('loadedmetadata', updateDuration);
     audio.addEventListener('ended', handleEnd);
 
-    // Initial Fetch
+    // Default Fetch
     const fetchDefault = async () => {
       try {
         const res = await axios.get("https://deezerdevs-deezer.p.rapidapi.com/search?q=top-hits", {
-          headers: { 'x-rapidapi-key': '84e121a50dmsh4650b0d1f6e44fep1ebe78jsn56932706b2b1', 'x-rapidapi-host': 'deezerdevs-deezer.p.rapidapi.com' }
+          headers: { 
+            'x-rapidapi-key': '84e121a50dmsh4650b0d1f6e44fep1ebe78jsn56932706b2b1', 
+            'x-rapidapi-host': 'deezerdevs-deezer.p.rapidapi.com' 
+          }
         });
         setTracks(res.data.data || []);
-      } catch (e) { console.error(e); }
+      } catch (e) { console.error("Fetch error:", e); }
     };
     fetchDefault();
 
     return () => {
+      audio.pause();
       audio.removeEventListener('timeupdate', updateProgress);
       audio.removeEventListener('loadedmetadata', updateDuration);
       audio.removeEventListener('ended', handleEnd);
     };
   }, []);
 
+  // ΔΙΟΡΘΩΜΕΝΗ ΛΕΙΤΟΥΡΓΙΑ PLAY
   const handlePlay = (track) => {
     const audio = audioRef.current;
+
     if (playingTrack?.id === track.id) {
-      audio.paused ? audio.play() : audio.pause();
-      setPlayingTrack(audio.paused ? null : track);
+      if (audio.paused) {
+        audio.play().catch(e => console.log("Playback failed:", e));
+      } else {
+        audio.pause();
+        setPlayingTrack(null);
+      }
     } else {
+      audio.pause();
       audio.src = track.preview;
-      audio.play();
-      setPlayingTrack(track);
+      audio.load(); // Φορτώνει το νέο src
+      audio.play()
+        .then(() => setPlayingTrack(track))
+        .catch(e => console.log("Playback failed:", e));
     }
   };
 
@@ -71,7 +85,10 @@ const MusicApp = () => {
         if (!exists) await db.searches.add({ query: q.toLowerCase(), timestamp: Date.now() });
       }
       const response = await axios.get(`https://deezerdevs-deezer.p.rapidapi.com/search?q=${q}`, {
-        headers: { 'x-rapidapi-key': '84e121a50dmsh4650b0d1f6e44fep1ebe78jsn56932706b2b1', 'x-rapidapi-host': 'deezerdevs-deezer.p.rapidapi.com' }
+        headers: { 
+            'x-rapidapi-key': '84e121a50dmsh4650b0d1f6e44fep1ebe78jsn56932706b2b1', 
+            'x-rapidapi-host': 'deezerdevs-deezer.p.rapidapi.com' 
+        }
       });
       setTracks(response.data.data || []);
     } catch (error) { console.error(error); }
@@ -86,6 +103,8 @@ const MusicApp = () => {
 
   return (
     <div className="flex h-screen bg-[#020205] text-white overflow-hidden font-sans text-sm relative">
+      
+      {/* SIDEBAR */}
       <aside className="w-64 bg-[#080810] border-r border-white/5 flex flex-col shrink-0">
         <div className="p-5 flex flex-col h-full">
           <div className="flex items-center gap-2 mb-10 px-2 cursor-pointer" onClick={() => setView('discover')}>
@@ -98,6 +117,7 @@ const MusicApp = () => {
         </div>
       </aside>
 
+      {/* MAIN */}
       <main className="flex-1 flex flex-col bg-gradient-to-br from-[#0d0d1a] to-[#020205] relative pb-24">
         <header className="p-4 flex items-center justify-between bg-black/20 backdrop-blur-xl border-b border-white/5 z-50">
           <div className="flex-1 max-w-lg relative">
@@ -108,6 +128,8 @@ const MusicApp = () => {
                 placeholder="Search..." value={searchQuery} onFocus={() => setShowHistory(true)} onChange={(e) => setSearchQuery(e.target.value)}
               />
             </form>
+            
+            {/* HISTORY DROPDOWN */}
             {showHistory && searchHistory.length > 0 && (
               <div className="absolute top-full left-0 w-full mt-2 bg-[#0d0d1a] border border-white/10 rounded-2xl shadow-2xl z-[60] p-2">
                 {searchHistory.map((item, idx) => (
@@ -119,13 +141,13 @@ const MusicApp = () => {
               </div>
             )}
           </div>
-          <button className="bg-gradient-to-r from-indigo-600 to-violet-600 text-white px-6 py-2 rounded-lg font-black uppercase text-[10px] tracking-widest shadow-lg">Sign Up</button>
+          <button className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-black uppercase text-[10px] tracking-widest shadow-lg">Sign Up</button>
         </header>
 
         <div className="flex-1 overflow-y-auto p-8" onClick={() => { setShowHistory(false); setActiveMenu(null); }}>
           <div className="flex items-center gap-4 mb-8">
             {view === 'library' && <button onClick={() => setView('discover')} className="p-2 bg-white/5 hover:bg-white/10 rounded-full text-indigo-400 transition-all"><ChevronLeft size={24} /></button>}
-            <h2 className="text-4xl font-black tracking-tighter uppercase italic text-white">{view === 'discover' ? 'Discover' : 'Library'}</h2>
+            <h2 className="text-4xl font-black tracking-tighter uppercase italic">{view === 'discover' ? 'Discover' : 'Library'}</h2>
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
@@ -137,11 +159,13 @@ const MusicApp = () => {
                     {playingTrack?.id === track.id ? <Pause size={20} fill="white" /> : <Play size={20} fill="white" className="ml-1" />}
                   </button>
                 </div>
+
                 <div className="flex justify-between items-start">
                   <div className="truncate flex-1 pr-2">
                     <h3 className="font-bold truncate text-zinc-100">{track.title}</h3>
                     <p className="text-[11px] text-zinc-500 mt-0.5">{track.artist?.name || track.artist}</p>
                   </div>
+                  
                   <div className="flex items-center gap-1">
                     <div className="relative">
                       <button onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === track.id ? null : track.id); }} className="p-1 text-zinc-600 hover:text-indigo-400"><MoreVertical size={18} /></button>
@@ -162,6 +186,7 @@ const MusicApp = () => {
           </div>
         </div>
 
+        {/* BOTTOM PLAYER BAR */}
         {playingTrack && (
           <div className="fixed bottom-0 left-0 right-0 bg-[#080810]/95 backdrop-blur-2xl border-t border-white/10 px-6 py-4 z-[100] flex items-center gap-6">
             <div className="flex items-center gap-4 w-72 shrink-0">
