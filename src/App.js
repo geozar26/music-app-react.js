@@ -115,7 +115,7 @@ const MusicApp = () => {
     <div className="flex min-h-screen bg-[#020205] text-white font-sans select-none" 
          onClick={() => {setActiveMenu(null); setShowSearchHistory(false);}}>
       
-      {/* Sidebar - Σταθερό */}
+      {/* Sidebar - Sticky */}
       <aside className="w-64 bg-black flex flex-col p-6 border-r border-white/5 shrink-0 h-screen sticky top-0">
         <div className="flex items-center gap-2 mb-10 cursor-pointer" onClick={() => setView('discover')}>
           <Music size={24} className="text-[#6366f1]" />
@@ -129,8 +129,8 @@ const MusicApp = () => {
         </nav>
       </aside>
 
-      {/* Main Area με pl-12 για να έρθει "λίγο πιο δεξιά" το περιεχόμενο */}
-      <main className="flex-1 flex flex-col relative pl-12">
+      {/* Main Area με pl-24 για να πάει ακόμα πιο δεξιά το περιεχόμενο */}
+      <main className="flex-1 flex flex-col relative pl-24">
         
         {/* Header */}
         <header className="p-4 flex items-center justify-between z-[100] bg-[#020205]/80 backdrop-blur-md sticky top-0">
