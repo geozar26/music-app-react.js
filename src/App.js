@@ -18,6 +18,7 @@ const MusicApp = () => {
   const [activeMenu, setActiveMenu] = useState(null); 
   const [playbackRate, setPlaybackRate] = useState(1);
   const [isSearching, setIsSearching] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Για την αποφυγή του flash μηνύματος
 
   const [favorites, setFavorites] = useState([]);
   const [searchHistory, setSearchHistory] = useState([]);
@@ -51,6 +52,7 @@ const MusicApp = () => {
   }, []);
 
   const fetchTrending = async () => {
+    setIsLoading(true);
     try {
       const res = await axios.get(`https://deezerdevs-deezer.p.rapidapi.com/search?q=trending`, {
         headers: {
@@ -59,7 +61,10 @@ const MusicApp = () => {
         }
       });
       setTracks(res.data.data || []);
-    } catch (err) {}
+    } catch (err) {
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSearch = async (e, override) => {
@@ -189,7 +194,6 @@ const MusicApp = () => {
             )}
           </div>
 
-          {/* HEADER BUTTONS WITH NEW HOVER EFFECTS */}
           <div className="flex items-center gap-6 pr-24">
               <button className="text-[10px] font-bold uppercase text-zinc-400 hover:text-[#6366f1] transition-colors">Install</button>
               <button className="text-[10px] font-bold uppercase text-zinc-400 hover:text-[#6366f1] transition-colors">Log In</button>
@@ -207,7 +211,7 @@ const MusicApp = () => {
             </h2>
           </div>
 
-          {shownTracks.length === 0 ? (
+          {!isLoading && shownTracks.length === 0 ? (
             <div className="flex flex-col items-center justify-center mt-20 opacity-40">
               {view === 'library' ? (
                 <>
@@ -251,8 +255,9 @@ const MusicApp = () => {
                           <MoreVertical size={16} />
                       </button>
 
+                      {/* CONTEXT MENU ΜΕΤΑΚΙΝΗΜΕΝΟ ΠΙΟ ΠΑΝΩ */}
                       {activeMenu === track.id && (
-                          <div className="absolute bottom-full left-0 mb-3 w-52 bg-[#0a0a0a] border border-white/10 rounded-2xl shadow-2xl py-3 z-[150] backdrop-blur-xl">
+                          <div className="absolute bottom-full left-0 mb-6 w-52 bg-[#0a0a0a] border border-white/10 rounded-2xl shadow-2xl py-3 z-[150] backdrop-blur-xl">
                               <button onClick={() => handleDownload(track)} className="w-full flex items-center gap-3 px-5 py-3 text-zinc-300 hover:bg-white/5 hover:text-white transition-all border-b border-white/5">
                                   <Download size={16} /> <span className="text-xs font-black uppercase tracking-wider">Download</span>
                               </button>
