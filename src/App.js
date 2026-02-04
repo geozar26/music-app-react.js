@@ -209,7 +209,7 @@ const MusicApp = () => {
           ) : (view === 'library' ? favorites : tracks).length === 0 ? (
             <div className="flex flex-col items-center justify-center mt-20 opacity-40">
               <Music2 size={64} className="mb-4" />
-              <p className="text-sm font-bold uppercase tracking-[0.2em]">NO TRACKS FOUND</p>
+              <p className="text-sm font-bold capitalize tracking-[0.2em]">No Tracks Found</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 pb-32">
