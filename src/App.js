@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Search, Play, Heart, Music, Library as LibraryIcon, 
@@ -115,7 +114,6 @@ const MusicApp = () => {
     <div className="flex min-h-screen bg-[#020205] text-white font-sans select-none" 
          onClick={() => {setActiveMenu(null); setShowSearchHistory(false);}}>
       
-      {/* Sidebar - Sticky */}
       <aside className="w-64 bg-black flex flex-col p-6 border-r border-white/5 shrink-0 h-screen sticky top-0">
         <div className="flex items-center gap-2 mb-10 cursor-pointer" onClick={() => setView('discover')}>
           <Music size={24} className="text-[#6366f1]" />
@@ -129,11 +127,9 @@ const MusicApp = () => {
         </nav>
       </aside>
 
-      {/* Main Area με pl-24 για να πάει ακόμα πιο δεξιά το περιεχόμενο */}
-      <main className="flex-1 flex flex-col relative pl-24">
+      <main className="flex-1 flex flex-col relative pl-48">
         
-        {/* Header */}
-        <header className="p-4 flex items-center justify-between z-[100] bg-[#020205]/80 backdrop-blur-md sticky top-0">
+        <header className="p-4 px-8 flex items-center justify-between z-[100] bg-[#020205]/80 backdrop-blur-md sticky top-0">
           <div className="w-[450px] relative" onClick={(e) => e.stopPropagation()}>
             <div className="relative group">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
@@ -182,7 +178,6 @@ const MusicApp = () => {
           </div>
         </header>
 
-        {/* Content Area */}
         <div className="flex-1 p-8">
           <div className="flex items-center gap-4 mb-10"> 
             <div className="flex items-center gap-4">
@@ -197,9 +192,10 @@ const MusicApp = () => {
             </div>
 
             {view === 'library' && favorites.length > 0 && (
+              /* Προστέθηκε ml-10 για να πάει το κουμπί Clear All πιο δεξιά */
               <button 
                 onClick={clearLibrary}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#6366f1]/20 hover:border-[#6366f1] transition-all duration-300 group bg-[#6366f1]/5 mt-2 shadow-sm"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#6366f1]/20 hover:border-[#6366f1] transition-all duration-300 group bg-[#6366f1]/5 mt-2 shadow-sm ml-10"
               >
                 <X size={12} className="text-[#6366f1] group-hover:rotate-90 transition-transform" />
                 <span className="text-[9px] font-black uppercase tracking-widest text-[#6366f1]">
