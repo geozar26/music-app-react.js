@@ -18,7 +18,7 @@ const MusicApp = () => {
   const [activeMenu, setActiveMenu] = useState(null); 
   const [playbackRate, setPlaybackRate] = useState(1);
   const [isSearching, setIsSearching] = useState(false);
-  const [isLoading, setIsLoading] = useState(true); // Για την αποφυγή του flash μηνύματος
+  const [isLoading, setIsLoading] = useState(true);
 
   const [favorites, setFavorites] = useState([]);
   const [searchHistory, setSearchHistory] = useState([]);
@@ -128,11 +128,10 @@ const MusicApp = () => {
     setActiveMenu(null);
   };
 
-  const shownTracks = view === 'discover' ? tracks : favorites;
-
   return (
     <div className="flex h-screen bg-[#020205] text-white overflow-hidden font-sans select-none" onClick={() => setActiveMenu(null)}>
       
+      {/* SIDEBAR */}
       <aside className="w-64 bg-black flex flex-col p-6 border-r border-white/5 shrink-0">
         <div className="flex items-center gap-2 mb-10 cursor-pointer" onClick={() => setView('discover')}>
           <Music className="text-white" size={24} />
@@ -152,6 +151,7 @@ const MusicApp = () => {
 
       <main className="flex-1 flex flex-col relative overflow-hidden">
         
+        {/* HEADER */}
         <header className="p-4 flex items-center justify-between z-[100]">
           <div className="w-[450px] relative">
             <div className="relative group">
@@ -165,36 +165,11 @@ const MusicApp = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               />
-              {searchQuery && (
-                <button 
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 bg-white rounded-full flex items-center justify-center hover:bg-zinc-200 transition-colors shadow-lg"
-                >
-                  <X size={12} className="text-black stroke-[3px]" />
-                </button>
-              )}
             </div>
-
-            {showSearchHistory && searchHistory.length > 0 && (
-              <div className="absolute top-full left-0 w-full mt-2 bg-[#0a0a0a] border border-white/10 rounded-xl shadow-2xl py-2 overflow-hidden z-[120]">
-                {searchHistory.filter(h => h.toLowerCase().startsWith(searchQuery.toLowerCase())).map((term, i) => (
-                  <div key={i} className="flex items-center justify-between px-4 hover:bg-white/5 transition-colors group/item">
-                    <button 
-                      onMouseDown={() => { setSearchQuery(term); handleSearch(null, term); }} 
-                      className="flex-1 text-left py-2.5 pl-6 text-zinc-400 text-[10px] font-bold uppercase flex items-center gap-3 group-hover/item:text-white transition-colors"
-                    >
-                      <History size={14} className="text-zinc-600 group-hover/item:text-indigo-400" /> {term}
-                    </button>
-                    <button onMouseDown={(e) => removeFromHistory(e, term)} className="p-2 text-zinc-600 hover:text-white transition-colors">
-                      <X size={14} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
 
-          <div className="flex items-center gap-6 pr-24">
+          {/* ΜΕΤΑΚΙΝΗΣΗ ΛΙΓΟ ΔΕΞΙΑ (από pr-24 σε pr-16) ΧΩΡΙΣ ΑΛΛΑΓΗ ΑΠΟΣΤΑΣΕΩΝ ΜΕΤΑΞΥ ΤΟΥΣ */}
+          <div className="flex items-center gap-6 pr-16">
               <button className="text-[10px] font-bold uppercase text-zinc-400 hover:text-[#6366f1] transition-colors">Install</button>
               <button className="text-[10px] font-bold uppercase text-zinc-400 hover:text-[#6366f1] transition-colors">Log In</button>
               <button className="bg-white text-black text-[10px] font-black uppercase px-6 py-2 rounded-full border border-transparent hover:bg-transparent hover:border-[#6366f1] hover:text-[#6366f1] transition-all duration-300">
@@ -203,15 +178,15 @@ const MusicApp = () => {
           </div>
         </header>
 
+        {/* CONTENT */}
         <div className="flex-1 overflow-y-auto p-8" onClick={() => setShowSearchHistory(false)}>
           <div className="flex items-center gap-4 mb-10">
-            {view === 'library' && <button onClick={() => setView('discover')} className="hover:text-white transition-colors"><ChevronLeft size={44} /></button>}
             <h2 className="text-[44px] font-black uppercase italic text-white tracking-tighter">
               {view === 'discover' ? 'DISCOVER' : 'LIBRARY'}
             </h2>
           </div>
 
-          {!isLoading && shownTracks.length === 0 ? (
+          {!isLoading && (view === 'library' ? favorites : tracks).length === 0 ? (
             <div className="flex flex-col items-center justify-center mt-20 opacity-40">
               {view === 'library' ? (
                 <>
@@ -222,76 +197,74 @@ const MusicApp = () => {
                 !isSearching && (
                   <>
                     <SearchX size={64} className="mb-4" />
-                    <p className="text-sm font-bold uppercase tracking-[0.2em]">Δεν βρέθηκαν αποτελέσματα για "{searchQuery}"</p>
+                    <p className="text-sm font-bold uppercase tracking-[0.2em]">Δεν βρέθηκαν αποτελέσματα</p>
                   </>
                 )
               )}
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 pb-32">
-              {shownTracks.map(track => {
-                const isLiked = favorites.some(f => f.id === track.id);
-                return (
-                  <div key={track.id} className="bg-[#111111]/40 p-4 rounded-[2rem] border border-white/5 relative group hover:border-white/10 transition-all">
-                    <div className="relative mb-4 aspect-square rounded-[1.5rem] overflow-hidden shadow-2xl">
-                      <img src={track.album?.cover_medium} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" alt="" />
-                      <button 
-                        onClick={() => {
-                          if (playingTrack?.id === track.id) { audioRef.current.paused ? audioRef.current.play() : audioRef.current.pause(); } 
-                          else { audioRef.current.src = track.preview; setPlayingTrack(track); audioRef.current.play(); }
-                        }} 
-                        className="absolute inset-0 m-auto w-12 h-12 bg-indigo-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
-                      >
-                        {playingTrack?.id === track.id && !isPaused ? <Pause size={20} fill="white" /> : <Play size={20} fill="white" className="ml-1" />}
-                      </button>
-                    </div>
-                    <h3 className="font-bold truncate text-zinc-100 text-xs">{track.title}</h3>
-                    
-                    <div className="flex justify-between items-center mt-4 relative">
-                      <button 
-                          onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === track.id ? null : track.id); }}
-                          className={`transition-colors p-1 rounded-full ${activeMenu === track.id ? 'bg-white/10 text-white' : 'text-zinc-600 hover:text-white'}`}
-                      >
-                          <MoreVertical size={16} />
-                      </button>
-
-                      {/* CONTEXT MENU ΜΕΤΑΚΙΝΗΜΕΝΟ ΠΙΟ ΠΑΝΩ */}
-                      {activeMenu === track.id && (
-                          <div className="absolute bottom-full left-0 mb-6 w-52 bg-[#0a0a0a] border border-white/10 rounded-2xl shadow-2xl py-3 z-[150] backdrop-blur-xl">
-                              <button onClick={() => handleDownload(track)} className="w-full flex items-center gap-3 px-5 py-3 text-zinc-300 hover:bg-white/5 hover:text-white transition-all border-b border-white/5">
-                                  <Download size={16} /> <span className="text-xs font-black uppercase tracking-wider">Download</span>
-                              </button>
-                              <div className="px-5 py-4">
-                                  <div className="flex items-center gap-2 mb-3 text-zinc-500">
-                                      <Gauge size={14} /> 
-                                      <span className="text-[10px] font-black uppercase tracking-widest">Playback Speed</span>
-                                  </div>
-                                  <div className="flex gap-2">
-                                      {[1, 1.25, 1.5].map(rate => (
-                                          <button 
-                                              key={rate} 
-                                              onClick={() => changeSpeed(rate)}
-                                              className={`flex-1 py-2 rounded-xl text-xs font-black transition-all border ${playbackRate === rate ? 'bg-white border-white text-black shadow-lg shadow-white/10' : 'border-white/10 text-zinc-500 hover:border-white/30 hover:text-white'}`}
-                                          >
-                                              {rate}x
-                                          </button>
-                                      ))}
-                                  </div>
-                              </div>
-                          </div>
-                      )}
-
-                      <button onClick={(e) => toggleLike(e, track)} className="hover:scale-110 transition-transform">
-                        <Heart size={18} className={`transition-all ${isLiked ? "text-red-500 fill-red-500" : "text-zinc-800 hover:text-zinc-400"}`} />
-                      </button>
-                    </div>
+              {(view === 'library' ? favorites : tracks).map(track => (
+                <div key={track.id} className="bg-[#111111]/40 p-4 rounded-[2rem] border border-white/5 relative group hover:border-white/10 transition-all">
+                  <div className="relative mb-4 aspect-square rounded-[1.5rem] overflow-hidden shadow-2xl">
+                    <img src={track.album?.cover_medium} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" alt="" />
+                    <button 
+                      onClick={() => {
+                        if (playingTrack?.id === track.id) { audioRef.current.paused ? audioRef.current.play() : audioRef.current.pause(); } 
+                        else { audioRef.current.src = track.preview; setPlayingTrack(track); audioRef.current.play(); }
+                      }} 
+                      className="absolute inset-0 m-auto w-12 h-12 bg-[#6366f1] rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
+                    >
+                      {playingTrack?.id === track.id && !isPaused ? <Pause size={20} fill="white" /> : <Play size={20} fill="white" className="ml-1" />}
+                    </button>
                   </div>
-                );
-              })}
+                  <h3 className="font-bold truncate text-zinc-100 text-xs">{track.title}</h3>
+                  
+                  <div className="flex justify-between items-center mt-4 relative">
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === track.id ? null : track.id); }}
+                        className={`transition-colors p-1 rounded-full ${activeMenu === track.id ? 'bg-white/10 text-white' : 'text-zinc-600 hover:text-white'}`}
+                    >
+                        <MoreVertical size={16} />
+                    </button>
+
+                    {/* CONTEXT MENU - PLAYBACK SPEED ΠΙΟ ΚΟΝΤΑ ΣΤΟ DOWNLOAD */}
+                    {activeMenu === track.id && (
+                        <div className="absolute bottom-full left-0 mb-5 w-52 bg-[#0a0a0a] border border-white/10 rounded-2xl shadow-2xl py-3 z-[150] backdrop-blur-xl">
+                            <button onClick={() => handleDownload(track)} className="w-full flex items-center gap-3 px-5 py-3 text-zinc-300 hover:bg-white/5 hover:text-white transition-all border-b border-white/5">
+                                <Download size={16} /> <span className="text-xs font-black uppercase tracking-wider">Download</span>
+                            </button>
+                            <div className="px-5 pt-3 pb-2"> {/* Μειωμένο padding για να έρθει πιο κοντά */}
+                                <div className="flex items-center gap-2 mb-2 text-zinc-500">
+                                    <Gauge size={14} /> 
+                                    <span className="text-[10px] font-black uppercase tracking-widest">Playback Speed</span>
+                                </div>
+                                <div className="flex gap-2">
+                                    {[1, 1.25, 1.5].map(rate => (
+                                        <button 
+                                            key={rate} 
+                                            onClick={() => changeSpeed(rate)}
+                                            className={`flex-1 py-2 rounded-xl text-xs font-black transition-all border ${playbackRate === rate ? 'bg-white border-white text-black shadow-lg shadow-white/10' : 'border-white/10 text-zinc-500 hover:border-white/30 hover:text-white'}`}
+                                        >
+                                            {rate}x
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    <button onClick={(e) => toggleLike(e, track)} className="hover:scale-110 transition-transform">
+                      <Heart size={18} className={`transition-all ${favorites.some(f => f.id === track.id) ? "text-red-500 fill-red-500" : "text-zinc-800 hover:text-zinc-400"}`} />
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
 
+        {/* PLAYER */}
         {playingTrack && (
           <div className="fixed bottom-0 left-0 right-0 bg-black/95 backdrop-blur-xl border-t border-white/5 px-8 py-4 flex items-center justify-between z-[200]">
             <div className="flex items-center gap-4 w-64">
@@ -300,7 +273,7 @@ const MusicApp = () => {
             </div>
             <div className="flex-1 max-w-xl mx-auto px-4">
               <div className="h-[2px] w-full bg-white/10 rounded-full overflow-hidden">
-                <div className="h-full bg-white transition-all duration-300" style={{ width: `${(currentTime / duration) * 100}%` }} />
+                <div className="h-full bg-[#6366f1] transition-all duration-300" style={{ width: `${(currentTime / duration) * 100}%` }} />
               </div>
             </div>
             <div className="flex items-center gap-6">
