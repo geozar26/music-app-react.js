@@ -128,6 +128,7 @@ const MusicApp = () => {
   return (
     <div className="flex h-screen bg-[#020205] text-white overflow-hidden font-sans select-none" onClick={() => setActiveMenu(null)}>
       
+      {/* SIDEBAR */}
       <aside className="w-64 bg-black flex flex-col p-6 border-r border-white/5 shrink-0">
         <div className="flex items-center gap-2 mb-10 cursor-pointer" onClick={() => setView('discover')}>
           <Music className="text-white" size={24} />
@@ -147,6 +148,7 @@ const MusicApp = () => {
 
       <main className="flex-1 flex flex-col relative overflow-hidden">
         
+        {/* HEADER */}
         <header className="p-4 flex items-center justify-between z-[100]">
           <div className="w-[450px] relative">
             <div className="relative group">
@@ -189,7 +191,6 @@ const MusicApp = () => {
             )}
           </div>
 
-          {/* ΕΠΑΝΑΦΟΡΑ ΚΟΥΜΠΙΩΝ HEADER */}
           <div className="flex items-center gap-6 pr-4">
               <button className="text-[10px] font-bold uppercase text-zinc-400 hover:text-white transition-colors">Install</button>
               <button className="text-[10px] font-bold uppercase text-zinc-400 hover:text-white transition-colors">Log In</button>
@@ -197,6 +198,7 @@ const MusicApp = () => {
           </div>
         </header>
 
+        {/* CONTENT */}
         <div className="flex-1 overflow-y-auto p-8" onClick={() => setShowSearchHistory(false)}>
           <div className="flex items-center gap-4 mb-10">
             {view === 'library' && <button onClick={() => setView('discover')} className="hover:text-white transition-colors"><ChevronLeft size={44} /></button>}
@@ -205,7 +207,6 @@ const MusicApp = () => {
             </h2>
           </div>
 
-          {/* EMPTY STATES LOGIC */}
           {shownTracks.length === 0 ? (
             <div className="flex flex-col items-center justify-center mt-20 opacity-40">
               {view === 'library' ? (
@@ -245,24 +246,28 @@ const MusicApp = () => {
                     <div className="flex justify-between items-center mt-4 relative">
                       <button 
                           onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === track.id ? null : track.id); }}
-                          className={`transition-colors ${activeMenu === track.id ? 'text-white' : 'text-zinc-600 hover:text-white'}`}
+                          className={`transition-colors p-1 rounded-full ${activeMenu === track.id ? 'bg-white/10 text-white' : 'text-zinc-600 hover:text-white'}`}
                       >
                           <MoreVertical size={16} />
                       </button>
 
+                      {/* ΔΙΟΡΘΩΜΕΝΟ CONTEXT MENU ΜΕ ΜΕΓΑΛΥΤΕΡΑ ΓΡΑΜΜΑΤΑ */}
                       {activeMenu === track.id && (
-                          <div className="absolute bottom-full left-0 mb-2 w-48 bg-[#0a0a0a] border border-white/10 rounded-2xl shadow-2xl py-3 z-[150] backdrop-blur-xl">
-                              <button onClick={() => handleDownload(track)} className="w-full flex items-center gap-3 px-4 py-2 text-zinc-300 hover:bg-white/5 hover:text-white transition-all">
-                                  <Download size={14} /> <span className="text-[11px] font-bold uppercase tracking-wider">Download</span>
+                          <div className="absolute bottom-full left-0 mb-3 w-52 bg-[#0a0a0a] border border-white/10 rounded-2xl shadow-2xl py-3 z-[150] backdrop-blur-xl">
+                              <button onClick={() => handleDownload(track)} className="w-full flex items-center gap-3 px-5 py-3 text-zinc-300 hover:bg-white/5 hover:text-white transition-all border-b border-white/5">
+                                  <Download size={16} /> <span className="text-xs font-black uppercase tracking-wider">Download</span>
                               </button>
-                              <div className="px-4 py-2 border-t border-white/5 mt-1">
-                                  <div className="flex items-center gap-2 mb-2 text-zinc-500"><Gauge size={12} /> <span className="text-[9px] font-bold uppercase tracking-widest">Playback Speed</span></div>
-                                  <div className="flex gap-1">
+                              <div className="px-5 py-4">
+                                  <div className="flex items-center gap-2 mb-3 text-zinc-500">
+                                      <Gauge size={14} /> 
+                                      <span className="text-[10px] font-black uppercase tracking-widest">Playback Speed</span>
+                                  </div>
+                                  <div className="flex gap-2">
                                       {[1, 1.25, 1.5].map(rate => (
                                           <button 
                                               key={rate} 
                                               onClick={() => changeSpeed(rate)}
-                                              className={`flex-1 py-1 rounded-lg text-[10px] font-bold transition-all ${playbackRate === rate ? 'bg-white text-black' : 'text-zinc-500 hover:text-white'}`}
+                                              className={`flex-1 py-2 rounded-xl text-xs font-black transition-all border ${playbackRate === rate ? 'bg-white border-white text-black shadow-lg shadow-white/10' : 'border-white/10 text-zinc-500 hover:border-white/30 hover:text-white'}`}
                                           >
                                               {rate}x
                                           </button>
@@ -283,6 +288,7 @@ const MusicApp = () => {
           )}
         </div>
 
+        {/* PLAYER */}
         {playingTrack && (
           <div className="fixed bottom-0 left-0 right-0 bg-black/95 backdrop-blur-xl border-t border-white/5 px-8 py-4 flex items-center justify-between z-[200]">
             <div className="flex items-center gap-4 w-64">
