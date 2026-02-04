@@ -59,9 +59,7 @@ const MusicApp = () => {
         }
       });
       setTracks(res.data.data || []);
-    } catch (err) {
-        console.error(err);
-    } finally { setIsLoading(false); }
+    } catch (err) {} finally { setIsLoading(false); }
   };
 
   const handleSearch = async (e, override) => {
@@ -80,13 +78,10 @@ const MusicApp = () => {
       });
       setTracks(res.data.data || []);
       setView('discover');
-
       const updatedHistory = [q, ...searchHistory.filter(item => item !== q)].slice(0, 6);
       setSearchHistory(updatedHistory);
       localStorage.setItem('beatstream_history', JSON.stringify(updatedHistory));
-    } catch (err) {
-        console.error(err);
-    } finally { setIsLoading(false); }
+    } catch (err) {} finally { setIsLoading(false); }
   };
 
   const removeFromHistory = (e, term) => {
@@ -94,6 +89,13 @@ const MusicApp = () => {
     const updatedHistory = searchHistory.filter(item => item !== term);
     setSearchHistory(updatedHistory);
     localStorage.setItem('beatstream_history', JSON.stringify(updatedHistory));
+  };
+
+  const clearLibrary = () => {
+    if (window.confirm("Are you sure you want to clear your library?")) {
+      setFavorites([]);
+      localStorage.setItem('beatstream_favs', JSON.stringify([]));
+    }
   };
 
   const toggleLike = (e, track) => {
@@ -137,7 +139,7 @@ const MusicApp = () => {
               <input 
                 type="text" 
                 className="w-full bg-[#111111] rounded-xl py-2.5 px-10 outline-none text-zinc-300 border border-white/5 focus:border-white/20 transition-all"
-                placeholder="Search songs, artists..." 
+                placeholder="Search..." 
                 value={searchQuery}
                 onFocus={() => setShowSearchHistory(true)}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -157,19 +159,12 @@ const MusicApp = () => {
             {showSearchHistory && searchHistory.length > 0 && (
               <div className="absolute top-full left-0 w-full mt-1 bg-[#0a0a0a] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-[120] backdrop-blur-xl bg-opacity-95">
                 {searchHistory.map((term, i) => (
-                  <div 
-                    key={i} 
-                    className="group/item w-full flex items-center justify-between px-4 py-3 hover:bg-white/5 transition-colors cursor-pointer"
-                    onMouseDown={() => {setSearchQuery(term); handleSearch(null, term);}}
-                  >
+                  <div key={i} className="group/item w-full flex items-center justify-between px-4 py-3 hover:bg-white/5 transition-colors cursor-pointer" onMouseDown={() => {setSearchQuery(term); handleSearch(null, term);}}>
                     <div className="flex items-center gap-3">
                       <History size={14} className="text-zinc-600" />
                       <span className="text-[10px] font-bold uppercase text-zinc-400 group-hover/item:text-white transition-colors">{term}</span>
                     </div>
-                    <button 
-                      onMouseDown={(e) => removeFromHistory(e, term)}
-                      className="text-white hover:text-[#6366f1] transition-all p-1"
-                    >
+                    <button onMouseDown={(e) => removeFromHistory(e, term)} className="text-white hover:text-[#6366f1] transition-all p-1">
                       <X size={14} strokeWidth={3} />
                     </button>
                   </div>
@@ -189,15 +184,30 @@ const MusicApp = () => {
 
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
-          <div className="flex items-center gap-4 mb-10">
-            {view === 'library' && (
-              <button onClick={() => setView('discover')} className="hover:text-[#6366f1] transition-colors">
-                <ChevronLeft size={44} strokeWidth={2.5} />
+          <div className="flex items-center justify-between mb-10">
+            <div className="flex items-center gap-4">
+              {view === 'library' && (
+                <button onClick={() => setView('discover')} className="hover:text-[#6366f1] transition-colors">
+                  <ChevronLeft size={44} strokeWidth={2.5} />
+                </button>
+              )}
+              <h2 className="text-[44px] font-black uppercase italic tracking-tighter">
+                {view === 'discover' ? 'DISCOVER' : 'MY LIBRARY'}
+              </h2>
+            </div>
+
+            {/* CLEAR ALL BUTTON - ΣΤΟΙΧΙΣΜΕΝΟ ΔΕΞΙΑ */}
+            {view === 'library' && favorites.length > 0 && (
+              <button 
+                onClick={clearLibrary}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-[#6366f1]/30 hover:border-[#6366f1] transition-all duration-300 group bg-[#6366f1]/5 shadow-lg"
+              >
+                <X size={16} className="text-[#6366f1] group-hover:rotate-90 transition-transform" />
+                <span className="text-[11px] font-black uppercase tracking-[0.15em] text-[#6366f1]">
+                  Clear All
+                </span>
               </button>
             )}
-            <h2 className="text-[44px] font-black uppercase italic tracking-tighter">
-              {view === 'discover' ? 'DISCOVER' : 'MY LIBRARY'}
-            </h2>
           </div>
 
           {isLoading ? (
@@ -258,7 +268,10 @@ const MusicApp = () => {
                       </div>
                     )}
                     <button onClick={(e) => toggleLike(e, track)}>
-                      <Heart size={18} className={favorites.some(f => f.id === track.id) ? "text-red-500 fill-red-500" : "text-zinc-800 hover:text-zinc-400"} />
+                      <Heart 
+                        size={18} 
+                        className={favorites.some(f => f.id === track.id) ? "text-red-500 fill-red-500 scale-110 transition-transform" : "text-zinc-800 hover:text-zinc-400"} 
+                      />
                     </button>
                   </div>
                 </div>
