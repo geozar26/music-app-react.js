@@ -186,7 +186,7 @@ const MusicApp = () => {
                 </button>
               )}
               <h2 className="text-[44px] font-black uppercase italic tracking-tighter">
-                {view === 'discover' ? 'DISCOVER' : 'MY LIBRARY'}
+                {view === 'discover' ? 'Discover' : 'My Library'}
               </h2>
             </div>
 
