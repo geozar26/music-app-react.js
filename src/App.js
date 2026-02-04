@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Search, Play, Heart, Music, Library as LibraryIcon, 
   MoreVertical, ChevronLeft, Pause, History, X, Download, Gauge, 
-  Music2, SearchX 
+  Music2 
 } from 'lucide-react';
 import axios from 'axios';
 
@@ -17,9 +17,7 @@ const MusicApp = () => {
   const [isPaused, setIsPaused] = useState(true);
   const [activeMenu, setActiveMenu] = useState(null); 
   const [playbackRate, setPlaybackRate] = useState(1);
-  const [isSearching, setIsSearching] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-
   const [favorites, setFavorites] = useState([]);
   const [searchHistory, setSearchHistory] = useState([]);
 
@@ -61,7 +59,9 @@ const MusicApp = () => {
         }
       });
       setTracks(res.data.data || []);
-    } catch (err) {} finally { setIsLoading(false); }
+    } catch (err) {
+        console.error(err);
+    } finally { setIsLoading(false); }
   };
 
   const handleSearch = async (e, override) => {
@@ -69,7 +69,7 @@ const MusicApp = () => {
     const q = override || searchQuery;
     if (!q.trim()) return;
 
-    setIsSearching(true);
+    setIsLoading(true);
     setShowSearchHistory(false);
     try {
       const res = await axios.get(`https://deezerdevs-deezer.p.rapidapi.com/search?q=${q}`, {
@@ -84,7 +84,16 @@ const MusicApp = () => {
       const updatedHistory = [q, ...searchHistory.filter(item => item !== q)].slice(0, 6);
       setSearchHistory(updatedHistory);
       localStorage.setItem('beatstream_history', JSON.stringify(updatedHistory));
-    } catch (err) {} finally { setIsSearching(false); }
+    } catch (err) {
+        console.error(err);
+    } finally { setIsLoading(false); }
+  };
+
+  const removeFromHistory = (e, term) => {
+    e.stopPropagation();
+    const updatedHistory = searchHistory.filter(item => item !== term);
+    setSearchHistory(updatedHistory);
+    localStorage.setItem('beatstream_history', JSON.stringify(updatedHistory));
   };
 
   const toggleLike = (e, track) => {
@@ -104,13 +113,14 @@ const MusicApp = () => {
   return (
     <div className="flex h-screen bg-[#020205] text-white overflow-hidden font-sans select-none" onClick={() => {setActiveMenu(null); setShowSearchHistory(false);}}>
       
+      {/* Sidebar */}
       <aside className="w-64 bg-black flex flex-col p-6 border-r border-white/5 shrink-0">
         <div className="flex items-center gap-2 mb-10 cursor-pointer" onClick={() => setView('discover')}>
-          <Music size={24} />
+          <Music size={24} className="text-[#6366f1]" />
           <span className="font-black text-xl uppercase italic tracking-tighter">Beatstream</span>
         </div>
         <nav>
-          <button onClick={() => setView('library')} className={`flex items-center gap-3 ${view === 'library' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}>
+          <button onClick={() => setView('library')} className={`flex items-center gap-3 transition-colors ${view === 'library' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}>
             <LibraryIcon size={16} />
             <span className="font-bold uppercase text-[11px] tracking-widest">Library</span>
           </button>
@@ -119,14 +129,15 @@ const MusicApp = () => {
 
       <main className="flex-1 flex flex-col relative overflow-hidden">
         
-        <header className="p-4 flex items-center justify-between z-[100]">
+        {/* Header */}
+        <header className="p-4 flex items-center justify-between z-[100] bg-[#020205]/80 backdrop-blur-md">
           <div className="w-[450px] relative" onClick={(e) => e.stopPropagation()}>
             <div className="relative group">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
               <input 
                 type="text" 
                 className="w-full bg-[#111111] rounded-xl py-2.5 px-10 outline-none text-zinc-300 border border-white/5 focus:border-white/20 transition-all"
-                placeholder="Search..." 
+                placeholder="Search songs, artists..." 
                 value={searchQuery}
                 onFocus={() => setShowSearchHistory(true)}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -135,41 +146,49 @@ const MusicApp = () => {
               {searchQuery && (
                 <button 
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-[#6366f1] transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 bg-black text-white p-1 rounded-full hover:bg-[#6366f1] transition-all duration-300 flex items-center justify-center shadow-lg"
                 >
-                  <X size={16} strokeWidth={3} />
+                  <X size={12} strokeWidth={4} />
                 </button>
               )}
             </div>
 
+            {/* Search History Dropdown */}
             {showSearchHistory && searchHistory.length > 0 && (
-              <div className="absolute top-full left-0 w-full mt-1 bg-[#0a0a0a] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-[120]">
+              <div className="absolute top-full left-0 w-full mt-1 bg-[#0a0a0a] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-[120] backdrop-blur-xl bg-opacity-95">
                 {searchHistory.map((term, i) => (
-                  <button 
+                  <div 
                     key={i} 
-                    onMouseDown={() => {setSearchQuery(term); handleSearch(null, term);}} 
-                    className="w-full flex items-center gap-3 px-4 py-3 text-[10px] font-bold uppercase text-zinc-400 hover:bg-white/5 hover:text-white transition-colors"
+                    className="group/item w-full flex items-center justify-between px-4 py-3 hover:bg-white/5 transition-colors cursor-pointer"
+                    onMouseDown={() => {setSearchQuery(term); handleSearch(null, term);}}
                   >
-                    <History size={14} className="text-zinc-600" /> {term}
-                  </button>
+                    <div className="flex items-center gap-3">
+                      <History size={14} className="text-zinc-600" />
+                      <span className="text-[10px] font-bold uppercase text-zinc-400 group-hover/item:text-white transition-colors">{term}</span>
+                    </div>
+                    <button 
+                      onMouseDown={(e) => removeFromHistory(e, term)}
+                      className="text-white hover:text-[#6366f1] transition-all p-1"
+                    >
+                      <X size={14} strokeWidth={3} />
+                    </button>
+                  </div>
                 ))}
               </div>
             )}
           </div>
 
-<div className="flex items-center gap-6 pr-12">
-  <button className="text-[10px] font-bold uppercase text-white hover:text-[#6366f1] transition-colors">
-    Install
-  </button>
-  <button className="text-[10px] font-bold uppercase text-white hover:text-[#6366f1] transition-colors">
-    Log In
-  </button>
-  <button className="bg-white text-black text-[10px] font-black uppercase px-6 py-2 rounded-full border border-transparent hover:bg-transparent hover:border-[#6366f1] hover:text-[#6366f1] transition-all duration-300">
-    Sign Up
-  </button>
-</div>
-              
-        <div className="flex-1 overflow-y-auto p-8">
+          <div className="flex items-center gap-6 pr-12">
+            <button className="text-[10px] font-bold uppercase text-zinc-400 hover:text-white transition-colors">Install</button>
+            <button className="text-[10px] font-bold uppercase text-zinc-400 hover:text-white transition-colors">Log In</button>
+            <button className="bg-white text-black text-[10px] font-black uppercase px-6 py-2 rounded-full border border-transparent hover:bg-transparent hover:border-[#6366f1] hover:text-[#6366f1] transition-all duration-300">
+              Sign Up
+            </button>
+          </div>
+        </header>
+
+        {/* Content Area */}
+        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
           <div className="flex items-center gap-4 mb-10">
             {view === 'library' && (
               <button onClick={() => setView('discover')} className="hover:text-[#6366f1] transition-colors">
@@ -181,10 +200,14 @@ const MusicApp = () => {
             </h2>
           </div>
 
-          {!isLoading && (view === 'library' ? favorites : tracks).length === 0 ? (
+          {isLoading ? (
+            <div className="flex justify-center mt-20">
+               <div className="w-8 h-8 border-4 border-[#6366f1] border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          ) : (view === 'library' ? favorites : tracks).length === 0 ? (
             <div className="flex flex-col items-center justify-center mt-20 opacity-40">
               <Music2 size={64} className="mb-4" />
-              <p className="text-sm font-bold uppercase tracking-[0.2em]">ΔΕΝ ΥΠΑΡΧΟΥΝ ΑΠΟΘΗΚΕΥΜΕΝΑ ΤΡΑΓΟΥΔΙΑ ΑΚΟΜΑ</p>
+              <p className="text-sm font-bold uppercase tracking-[0.2em]">NO TRACKS FOUND</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 pb-32">
@@ -192,33 +215,51 @@ const MusicApp = () => {
                 <div key={track.id} className="bg-[#111111]/40 p-4 rounded-[2rem] border border-white/5 relative group hover:border-white/10 transition-all">
                   <div className="relative mb-4 aspect-square rounded-[1.5rem] overflow-hidden shadow-2xl">
                     <img src={track.album?.cover_medium} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="" />
-                    <button onClick={() => {if (playingTrack?.id === track.id) {isPaused ? audioRef.current.play() : audioRef.current.pause();} else {audioRef.current.src = track.preview; setPlayingTrack(track); audioRef.current.play();}}} className="absolute inset-0 m-auto w-12 h-12 bg-[#6366f1] rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
+                    <button 
+                      onClick={() => {
+                        if (playingTrack?.id === track.id) {
+                          isPaused ? audioRef.current.play() : audioRef.current.pause();
+                        } else {
+                          audioRef.current.src = track.preview; 
+                          setPlayingTrack(track); 
+                          audioRef.current.play();
+                        }
+                      }} 
+                      className="absolute inset-0 m-auto w-12 h-12 bg-[#6366f1] rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all transform hover:scale-110 shadow-xl"
+                    >
                       {playingTrack?.id === track.id && !isPaused ? <Pause size={20} fill="white" /> : <Play size={20} fill="white" className="ml-1" />}
                     </button>
                   </div>
-                  <h3 className="font-bold truncate text-xs">{track.title}</h3>
-                  <div className="flex justify-between items-center mt-4 relative">
-                    <button onClick={(e) => {e.stopPropagation(); setActiveMenu(activeMenu === track.id ? null : track.id);}} className="text-zinc-600 hover:text-white transition-colors"><MoreVertical size={16} /></button>
+                  
+                  <h3 className="font-bold truncate text-xs mb-1">{track.title}</h3>
+                  <p className="text-[10px] text-zinc-500 truncate mb-4 uppercase font-bold tracking-wider">{track.artist?.name}</p>
+
+                  <div className="flex justify-between items-center relative">
+                    <button onClick={(e) => {e.stopPropagation(); setActiveMenu(activeMenu === track.id ? null : track.id);}} className="text-zinc-600 hover:text-white transition-colors">
+                        <MoreVertical size={16} />
+                    </button>
                     
                     {activeMenu === track.id && (
-                        <div className="absolute bottom-full left-0 mb-4 w-52 bg-[#0a0a0a] border border-white/10 rounded-2xl shadow-2xl py-3 z-[150] backdrop-blur-xl">
-                            <button className="w-full flex items-center gap-3 px-5 py-3 text-zinc-300 hover:bg-white/5 hover:text-white transition-all border-b border-white/5">
-                                <Download size={16} /> <span className="text-xs font-black uppercase tracking-wider">Download</span>
-                            </button>
-                            <div className="px-5 pt-3 pb-1">
-                                <div className="flex items-center gap-2 mb-2 text-zinc-500">
-                                    <Gauge size={14} /> 
-                                    <span className="text-[10px] font-black uppercase tracking-widest">Playback Speed</span>
-                                </div>
-                                <div className="flex gap-2">
-                                    {[1, 1.25, 1.5].map(rate => (
-                                        <button key={rate} onClick={() => changeSpeed(rate)} className={`flex-1 py-1.5 rounded-xl text-xs font-black border ${playbackRate === rate ? 'bg-white text-black' : 'border-white/10 text-zinc-500 hover:text-white'}`}>{rate}x</button>
-                                    ))}
-                                </div>
-                            </div>
+                      <div className="absolute bottom-full left-0 mb-4 w-52 bg-[#0a0a0a] border border-white/10 rounded-2xl shadow-2xl py-3 z-[150] backdrop-blur-xl">
+                        <button className="w-full flex items-center gap-3 px-5 py-3 text-zinc-300 hover:bg-white/5 hover:text-white transition-all border-b border-white/5">
+                          <Download size={16} /> <span className="text-xs font-black uppercase tracking-wider">Download</span>
+                        </button>
+                        <div className="px-5 pt-3 pb-1">
+                          <div className="flex items-center gap-2 mb-2 text-zinc-500">
+                            <Gauge size={14} /> 
+                            <span className="text-[10px] font-black uppercase tracking-widest">Playback Speed</span>
+                          </div>
+                          <div className="flex gap-2">
+                            {[1, 1.25, 1.5].map(rate => (
+                              <button key={rate} onClick={() => changeSpeed(rate)} className={`flex-1 py-1.5 rounded-xl text-xs font-black border transition-all ${playbackRate === rate ? 'bg-white text-black border-white' : 'border-white/10 text-zinc-500 hover:text-white'}`}>{rate}x</button>
+                            ))}
+                          </div>
                         </div>
+                      </div>
                     )}
-                    <button onClick={(e) => toggleLike(e, track)}><Heart size={18} className={favorites.some(f => f.id === track.id) ? "text-red-500 fill-red-500" : "text-zinc-800 hover:text-zinc-400"} /></button>
+                    <button onClick={(e) => toggleLike(e, track)}>
+                      <Heart size={18} className={favorites.some(f => f.id === track.id) ? "text-red-500 fill-red-500" : "text-zinc-800 hover:text-zinc-400"} />
+                    </button>
                   </div>
                 </div>
               ))}
