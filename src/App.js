@@ -191,10 +191,10 @@ const MusicApp = () => {
             </div>
 
             {view === 'library' && favorites.length > 0 && (
-              /* Μεγαλύτερο κουμπί Clear All: αυξήθηκε το px-5 (padding), το py-2 και το text-xs */
+              /* ΑΛΛΑΓΗ ΕΔΩ: bg-white για λευκό κουμπί και text-[#6366f1] για μωβ γράμματα */
               <button 
                 onClick={clearLibrary}
-                className="flex items-center gap-2 px-5 py-2 rounded-lg border border-[#6366f1]/20 hover:border-[#6366f1] transition-all duration-300 group bg-[#6366f1]/5 mt-2 shadow-sm ml-16"
+                className="flex items-center gap-2 px-5 py-2 rounded-lg bg-white hover:bg-zinc-200 transition-all duration-300 group mt-2 shadow-lg ml-16"
               >
                 <X size={14} className="text-[#6366f1] group-hover:rotate-90 transition-transform" />
                 <span className="text-[11px] font-black uppercase tracking-widest text-[#6366f1]">
