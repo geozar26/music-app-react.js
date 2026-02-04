@@ -158,8 +158,8 @@ const MusicApp = () => {
           </div>
 
           <div className="flex items-center gap-6 pr-12">
-            <button className="text-[10px] font-bold uppercase text-zinc-400 hover:text-[#6366f1] transition-colors">Install</button>
-            <button className="text-[10px] font-bold uppercase text-zinc-400 hover:text-[#6366f1] transition-colors">Log In</button>
+            <button className="text-[10px] font-bold uppercase text-white hover:text-[#6366f1] transition-colors">Install</button>
+            <button className="text-[10px] font-bold uppercase text-white hover:[#6366f1] transition-colors">Log In</button>
             <button className="bg-white text-black text-[10px] font-black uppercase px-6 py-2 rounded-full border border-transparent hover:bg-transparent hover:border-[#6366f1] hover:text-[#6366f1] transition-all duration-300">Sign Up</button>
           </div>
         </header>
