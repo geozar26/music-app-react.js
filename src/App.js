@@ -191,10 +191,10 @@ const MusicApp = () => {
             </div>
 
             {view === 'library' && favorites.length > 0 && (
-              /* ΑΛΛΑΓΗ ΕΔΩ: bg-white για λευκό κουμπί και text-[#6366f1] για μωβ γράμματα */
+              /* ΑΛΛΑΓΗ ΕΔΩ: bg-zinc-200 (λιγότερο φωτεινό από το καθαρό λευκό) */
               <button 
                 onClick={clearLibrary}
-                className="flex items-center gap-2 px-5 py-2 rounded-lg bg-white hover:bg-zinc-200 transition-all duration-300 group mt-2 shadow-lg ml-16"
+                className="flex items-center gap-2 px-5 py-2 rounded-lg bg-zinc-200 hover:bg-zinc-300 transition-all duration-300 group mt-2 shadow-md ml-16"
               >
                 <X size={14} className="text-[#6366f1] group-hover:rotate-90 transition-transform" />
                 <span className="text-[11px] font-black uppercase tracking-widest text-[#6366f1]">
