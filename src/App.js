@@ -127,9 +127,8 @@ const MusicApp = () => {
         </nav>
       </aside>
 
-      <main className="flex-1 flex flex-col relative pl-48">
-        
-        <header className="p-4 px-8 flex items-center justify-between z-[100] bg-[#020205]/80 backdrop-blur-md sticky top-0">
+      <main className="flex-1 flex flex-col relative">
+        <header className="p-4 flex items-center justify-between z-[100] bg-[#020205]/80 backdrop-blur-md sticky top-0">
           <div className="w-[450px] relative" onClick={(e) => e.stopPropagation()}>
             <div className="relative group">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
@@ -192,10 +191,10 @@ const MusicApp = () => {
             </div>
 
             {view === 'library' && favorites.length > 0 && (
-              /* Προστέθηκε ml-10 για να πάει το κουμπί Clear All πιο δεξιά */
+              /* ΜΟΝΟ ΕΔΩ ΕΓΙΝΕ ΑΛΛΑΓΗ: Προστέθηκε ml-16 για να πάει το Clear All πιο δεξιά από τον τίτλο */
               <button 
                 onClick={clearLibrary}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#6366f1]/20 hover:border-[#6366f1] transition-all duration-300 group bg-[#6366f1]/5 mt-2 shadow-sm ml-10"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#6366f1]/20 hover:border-[#6366f1] transition-all duration-300 group bg-[#6366f1]/5 mt-2 shadow-sm ml-16"
               >
                 <X size={12} className="text-[#6366f1] group-hover:rotate-90 transition-transform" />
                 <span className="text-[9px] font-black uppercase tracking-widest text-[#6366f1]">
