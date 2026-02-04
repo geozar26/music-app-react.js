@@ -117,12 +117,12 @@ const MusicApp = () => {
       <aside className="w-64 bg-black flex flex-col p-6 border-r border-white/5 shrink-0 h-screen sticky top-0">
         <div className="flex items-center gap-2 mb-10 cursor-pointer" onClick={() => setView('discover')}>
           <Music size={24} className="text-[#6366f1]" />
-          <span className="font-black text-xl uppercase italic tracking-tighter">Beatstream</span>
+          <span className="font-black text-xl capitalize italic tracking-tighter">Beatstream</span>
         </div>
         <nav>
           <button onClick={() => setView('library')} className={`flex items-center gap-3 transition-colors ${view === 'library' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}>
             <LibraryIcon size={16} />
-            <span className="font-bold uppercase text-[11px] tracking-widest">Library</span>
+            <span className="font-bold capitalize text-[13px] tracking-widest">Library</span>
           </button>
         </nav>
       </aside>
@@ -185,7 +185,7 @@ const MusicApp = () => {
                   <ChevronLeft size={44} strokeWidth={2.5} />
                 </button>
               )}
-              <h2 className="text-[44px] font-black uppercase italic tracking-tighter">
+              <h2 className="text-[44px] font-black capitalize italic tracking-tighter">
                 {view === 'discover' ? 'Discover' : 'My Library'}
               </h2>
             </div>
