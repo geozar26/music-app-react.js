@@ -1,8 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  Search, Play, Heart, Music,
+  Search,
+  Play,
+  Heart,
+  Music,
   Library as LibraryIcon,
-  MoreVertical, ChevronLeft, Pause, History
+  MoreVertical,
+  ChevronLeft,
+  Pause,
+  History
 } from 'lucide-react';
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "./db";
@@ -19,7 +25,7 @@ const MusicApp = () => {
 
   const audioRef = useRef(new Audio());
 
-  /* ================= DEXIE ================= */
+  /* ===================== DEXIE ===================== */
 
   const favoriteTracks = useLiveQuery(
     () => db.tracks.toArray(),
@@ -40,7 +46,7 @@ const MusicApp = () => {
           )
           .slice(0, 6);
 
-  /* ================= FETCH ================= */
+  /* ===================== INITIAL FETCH ===================== */
 
   useEffect(() => {
     const fetchInitial = async () => {
@@ -73,7 +79,7 @@ const MusicApp = () => {
     };
   }, []);
 
-  /* ================= SEARCH ================= */
+  /* ===================== SEARCH ===================== */
 
   const handleSearch = async (e, override) => {
     if (e) e.preventDefault();
@@ -102,7 +108,7 @@ const MusicApp = () => {
     } catch {}
   };
 
-  /* ============ ❤️ LIKE (ΜΟΝΗ ΟΥΣΙΑΣΤΙΚΗ ΑΛΛΑΓΗ) ============ */
+  /* ===================== ❤️ LIKE (FIXED) ===================== */
 
   const toggleLike = async (e, track) => {
     e.stopPropagation();
@@ -122,9 +128,9 @@ const MusicApp = () => {
     }
   };
 
-  /* ================= UI ================= */
-
   const shownTracks = view === 'discover' ? tracks : favoriteTracks;
+
+  /* ===================== UI ===================== */
 
   return (
     <div className="flex h-screen bg-[#020205] text-white overflow-hidden font-sans text-sm">
@@ -160,18 +166,23 @@ const MusicApp = () => {
         {/* HEADER */}
         <header className="p-4 flex items-center justify-between z-[100]">
           <div className="w-[450px] relative">
-            <Search
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500"
-              size={16}
-            />
-            <input
-              className="w-full bg-[#111111] rounded-xl py-2 px-10 outline-none"
-              placeholder="Search..."
-              value={searchQuery}
-              onFocus={() => setShowSearchHistory(true)}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-            />
+            <div className="relative">
+              <Search
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500"
+                size={16}
+              />
+              <input
+                type="text"
+                className="w-full bg-[#111111] rounded-xl py-2 px-10 outline-none text-zinc-300"
+                placeholder="Search..."
+                value={searchQuery}
+                onFocus={() => setShowSearchHistory(true)}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) =>
+                  e.key === 'Enter' && handleSearch()
+                }
+              />
+            </div>
 
             {showSearchHistory && filteredHistory.length > 0 && (
               <div className="absolute top-full left-0 w-full mt-2 bg-[#0a0a0a] border border-white/10 rounded-xl shadow-2xl py-2 z-[110]">
@@ -184,24 +195,37 @@ const MusicApp = () => {
                     }}
                     className="w-full text-left px-10 py-2 hover:bg-white/5 text-zinc-400 text-[10px] font-bold uppercase flex items-center gap-3"
                   >
-                    <History size={14} />
+                    <History size={14} className="text-zinc-600" />
                     {item.term}
                   </button>
                 ))}
               </div>
             )}
           </div>
+
+          {/* HEADER BUTTONS */}
+          <div className="flex items-center gap-6">
+            <button className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">
+              Install
+            </button>
+            <button className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">
+              Log In
+            </button>
+            <button className="bg-white text-black text-[10px] font-black uppercase px-6 py-2 rounded-full">
+              Sign Up
+            </button>
+          </div>
         </header>
 
         {/* CONTENT */}
-        <div className="flex-1 overflow-y-auto p-8">
+        <div className="flex-1 overflow-y-auto p-8" onClick={() => setShowSearchHistory(false)}>
           <div className="flex items-center gap-4 mb-10">
             {view === 'library' && (
               <button onClick={() => setView('discover')}>
                 <ChevronLeft size={44} />
               </button>
             )}
-            <h2 className="text-[44px] font-black uppercase italic">
+            <h2 className="text-[44px] font-black uppercase italic text-zinc-300 tracking-tighter">
               {view === 'discover' ? 'DISCOVER' : 'MY LIBRARY'}
             </h2>
           </div>
@@ -213,15 +237,14 @@ const MusicApp = () => {
               return (
                 <div
                   key={track.id}
-                  className="bg-[#111111]/40 p-4 rounded-[2rem] border border-white/5 group"
+                  className="bg-[#111111]/40 p-4 rounded-[2rem] border border-white/5 relative group"
                 >
-                  <div className="relative mb-4 aspect-square rounded-[1.5rem] overflow-hidden">
+                  <div className="relative mb-4 aspect-square rounded-[1.5rem] overflow-hidden shadow-2xl">
                     <img
                       src={track.album?.cover_medium}
                       className="w-full h-full object-cover"
                       alt=""
                     />
-
                     <button
                       onClick={() => {
                         const audio = audioRef.current;
@@ -233,7 +256,7 @@ const MusicApp = () => {
                           audio.play();
                         }
                       }}
-                      className="absolute inset-0 m-auto w-12 h-12 bg-indigo-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100"
+                      className="absolute inset-0 m-auto w-12 h-12 bg-indigo-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
                     >
                       {playingTrack?.id === track.id &&
                       !audioRef.current.paused ? (
@@ -244,18 +267,20 @@ const MusicApp = () => {
                     </button>
                   </div>
 
-                  <h3 className="font-bold truncate">{track.title}</h3>
+                  <h3 className="font-bold truncate text-zinc-100">
+                    {track.title}
+                  </h3>
 
                   <div className="flex justify-between items-center mt-4">
-                    <MoreVertical size={16} />
+                    <MoreVertical size={16} className="text-zinc-600" />
                     <button onClick={(e) => toggleLike(e, track)}>
                       <Heart
                         size={18}
-                        className={
+                        className={`transition-all ${
                           isLiked
                             ? "text-red-500 fill-red-500"
                             : "text-zinc-800 hover:text-zinc-400"
-                        }
+                        }`}
                       />
                     </button>
                   </div>
@@ -267,22 +292,22 @@ const MusicApp = () => {
 
         {/* PLAYER */}
         {playingTrack && (
-          <div className="fixed bottom-0 left-0 right-0 bg-black/95 border-t border-white/5 px-8 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-4 w-64">
+          <div className="fixed bottom-0 left-0 right-0 bg-black/95 backdrop-blur-xl border-t border-white/5 px-8 py-4 flex items-center justify-between z-[200]">
+            <div className="flex items-center gap-4 w-64 shrink-0">
               <img
                 src={playingTrack.album?.cover_small}
                 className="w-12 h-12 rounded-lg"
                 alt=""
               />
-              <div className="truncate font-bold">
+              <div className="truncate text-white font-bold text-sm">
                 {playingTrack.title}
               </div>
             </div>
 
-            <div className="flex-1 max-w-xl mx-auto">
-              <div className="h-[2px] bg-white/10 rounded-full overflow-hidden">
+            <div className="flex-1 max-w-xl mx-auto flex items-center px-4">
+              <div className="h-[2px] w-full bg-white/5 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-indigo-500"
+                  className="h-full bg-indigo-500 transition-all"
                   style={{
                     width: `${(currentTime / duration) * 100}%`
                   }}
@@ -312,4 +337,6 @@ const MusicApp = () => {
 };
 
 export default MusicApp;
+
+
 
