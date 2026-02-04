@@ -26,7 +26,6 @@ const MusicApp = () => {
   const audioRef = useRef(new Audio());
 
   useEffect(() => {
-    // Φόρτωση Favorites και History από Local Storage
     const savedFavs = JSON.parse(localStorage.getItem('beatstream_favs')) || [];
     const savedHist = JSON.parse(localStorage.getItem('beatstream_history')) || [];
     setFavorites(savedFavs);
@@ -71,6 +70,7 @@ const MusicApp = () => {
     if (!q.trim()) return;
 
     setIsSearching(true);
+    setShowSearchHistory(false);
     try {
       const res = await axios.get(`https://deezerdevs-deezer.p.rapidapi.com/search?q=${q}`, {
         headers: {
@@ -80,10 +80,8 @@ const MusicApp = () => {
       });
       setTracks(res.data.data || []);
       setView('discover');
-      setShowSearchHistory(false);
 
-      // Αποθήκευση στο Ιστορικό
-      const updatedHistory = [q, ...searchHistory.filter(item => item !== q)].slice(0, 8);
+      const updatedHistory = [q, ...searchHistory.filter(item => item !== q)].slice(0, 6);
       setSearchHistory(updatedHistory);
       localStorage.setItem('beatstream_history', JSON.stringify(updatedHistory));
     } catch (err) {} finally { setIsSearching(false); }
@@ -134,7 +132,6 @@ const MusicApp = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               />
-              {/* X BUTTON ΜΕ ΜΩΒ HOVER */}
               {searchQuery && (
                 <button 
                   onClick={() => setSearchQuery('')}
@@ -145,11 +142,14 @@ const MusicApp = () => {
               )}
             </div>
 
-            {/* SEARCH HISTORY DROPDOWN */}
             {showSearchHistory && searchHistory.length > 0 && (
-              <div className="absolute top-full left-0 w-full mt-2 bg-[#0a0a0a] border border-white/10 rounded-xl shadow-2xl py-2 z-[120]">
+              <div className="absolute top-full left-0 w-full mt-1 bg-[#0a0a0a] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-[120]">
                 {searchHistory.map((term, i) => (
-                  <button key={i} onMouseDown={() => {setSearchQuery(term); handleSearch(null, term);}} className="w-full flex items-center gap-3 px-4 py-2 text-[10px] font-bold uppercase text-zinc-400 hover:bg-white/5 hover:text-white transition-colors">
+                  <button 
+                    key={i} 
+                    onMouseDown={() => {setSearchQuery(term); handleSearch(null, term);}} 
+                    className="w-full flex items-center gap-3 px-4 py-3 text-[10px] font-bold uppercase text-zinc-400 hover:bg-white/5 hover:text-white transition-colors"
+                  >
                     <History size={14} className="text-zinc-600" /> {term}
                   </button>
                 ))}
@@ -185,9 +185,9 @@ const MusicApp = () => {
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 pb-32">
               {(view === 'library' ? favorites : tracks).map(track => (
                 <div key={track.id} className="bg-[#111111]/40 p-4 rounded-[2rem] border border-white/5 relative group hover:border-white/10 transition-all">
-                  <div className="relative mb-4 aspect-square rounded-[1.5rem] overflow-hidden">
+                  <div className="relative mb-4 aspect-square rounded-[1.5rem] overflow-hidden shadow-2xl">
                     <img src={track.album?.cover_medium} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="" />
-                    <button onClick={() => {if (playingTrack?.id === track.id) {isPaused ? audioRef.current.play() : audioRef.current.pause();} else {audioRef.current.src = track.preview; setPlayingTrack(track); audioRef.current.play();}}} className="absolute inset-0 m-auto w-12 h-12 bg-[#6366f1] rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-xl">
+                    <button onClick={() => {if (playingTrack?.id === track.id) {isPaused ? audioRef.current.play() : audioRef.current.pause();} else {audioRef.current.src = track.preview; setPlayingTrack(track); audioRef.current.play();}}} className="absolute inset-0 m-auto w-12 h-12 bg-[#6366f1] rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
                       {playingTrack?.id === track.id && !isPaused ? <Pause size={20} fill="white" /> : <Play size={20} fill="white" className="ml-1" />}
                     </button>
                   </div>
@@ -195,7 +195,6 @@ const MusicApp = () => {
                   <div className="flex justify-between items-center mt-4 relative">
                     <button onClick={(e) => {e.stopPropagation(); setActiveMenu(activeMenu === track.id ? null : track.id);}} className="text-zinc-600 hover:text-white transition-colors"><MoreVertical size={16} /></button>
                     
-                    {/* CONTEXT MENU ΜΕ ΤΟ ΕΙΚΟΝΙΔΙΟ ΣΤΗΝ ΙΔΙΑ ΓΡΑΜΜΗ */}
                     {activeMenu === track.id && (
                         <div className="absolute bottom-full left-0 mb-4 w-52 bg-[#0a0a0a] border border-white/10 rounded-2xl shadow-2xl py-3 z-[150] backdrop-blur-xl">
                             <button className="w-full flex items-center gap-3 px-5 py-3 text-zinc-300 hover:bg-white/5 hover:text-white transition-all border-b border-white/5">
