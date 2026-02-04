@@ -235,4 +235,3 @@ const MusicApp = () => {
 };
 
 export default MusicApp;
-
