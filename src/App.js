@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Search, Play, Heart, Music, Library as LibraryIcon, 
@@ -111,11 +112,10 @@ const MusicApp = () => {
   };
 
   return (
-    /* Κεντρικό Container: Χρησιμοποιούμε min-h-screen αντί για h-screen για να επιτρέψουμε το scroll της σελίδας */
     <div className="flex min-h-screen bg-[#020205] text-white font-sans select-none" 
          onClick={() => {setActiveMenu(null); setShowSearchHistory(false);}}>
       
-      {/* Sidebar: Σταθερό αριστερά (sticky) με ύψος h-screen */}
+      {/* Sidebar - Σταθερό */}
       <aside className="w-64 bg-black flex flex-col p-6 border-r border-white/5 shrink-0 h-screen sticky top-0">
         <div className="flex items-center gap-2 mb-10 cursor-pointer" onClick={() => setView('discover')}>
           <Music size={24} className="text-[#6366f1]" />
@@ -129,9 +129,10 @@ const MusicApp = () => {
         </nav>
       </aside>
 
-      <main className="flex-1 flex flex-col relative">
+      {/* Main Area με pl-12 για να έρθει "λίγο πιο δεξιά" το περιεχόμενο */}
+      <main className="flex-1 flex flex-col relative pl-12">
         
-        {/* Header: Σταθερό στο πάνω μέρος ενώ σκρολάρουμε (sticky) */}
+        {/* Header */}
         <header className="p-4 flex items-center justify-between z-[100] bg-[#020205]/80 backdrop-blur-md sticky top-0">
           <div className="w-[450px] relative" onClick={(e) => e.stopPropagation()}>
             <div className="relative group">
@@ -181,7 +182,7 @@ const MusicApp = () => {
           </div>
         </header>
 
-        {/* Content Area: Η scrollbar πλέον είναι στον browser */}
+        {/* Content Area */}
         <div className="flex-1 p-8">
           <div className="flex items-center gap-4 mb-10"> 
             <div className="flex items-center gap-4">
