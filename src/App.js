@@ -128,7 +128,6 @@ const MusicApp = () => {
   return (
     <div className="flex h-screen bg-[#020205] text-white overflow-hidden font-sans select-none" onClick={() => setActiveMenu(null)}>
       
-      {/* SIDEBAR */}
       <aside className="w-64 bg-black flex flex-col p-6 border-r border-white/5 shrink-0">
         <div className="flex items-center gap-2 mb-10 cursor-pointer" onClick={() => setView('discover')}>
           <Music className="text-white" size={24} />
@@ -148,7 +147,6 @@ const MusicApp = () => {
 
       <main className="flex-1 flex flex-col relative overflow-hidden">
         
-        {/* HEADER */}
         <header className="p-4 flex items-center justify-between z-[100]">
           <div className="w-[450px] relative">
             <div className="relative group">
@@ -191,14 +189,16 @@ const MusicApp = () => {
             )}
           </div>
 
-          <div className="flex items-center gap-6 pr-4">
-              <button className="text-[10px] font-bold uppercase text-zinc-400 hover:text-white transition-colors">Install</button>
-              <button className="text-[10px] font-bold uppercase text-zinc-400 hover:text-white transition-colors">Log In</button>
-              <button className="bg-white text-black text-[10px] font-black uppercase px-6 py-2 rounded-full hover:bg-zinc-200 transition-colors">Sign Up</button>
+          {/* HEADER BUTTONS WITH NEW HOVER EFFECTS */}
+          <div className="flex items-center gap-6 pr-24">
+              <button className="text-[10px] font-bold uppercase text-zinc-400 hover:text-[#6366f1] transition-colors">Install</button>
+              <button className="text-[10px] font-bold uppercase text-zinc-400 hover:text-[#6366f1] transition-colors">Log In</button>
+              <button className="bg-white text-black text-[10px] font-black uppercase px-6 py-2 rounded-full border border-transparent hover:bg-transparent hover:border-[#6366f1] hover:text-[#6366f1] transition-all duration-300">
+                Sign Up
+              </button>
           </div>
         </header>
 
-        {/* CONTENT */}
         <div className="flex-1 overflow-y-auto p-8" onClick={() => setShowSearchHistory(false)}>
           <div className="flex items-center gap-4 mb-10">
             {view === 'library' && <button onClick={() => setView('discover')} className="hover:text-white transition-colors"><ChevronLeft size={44} /></button>}
@@ -251,7 +251,6 @@ const MusicApp = () => {
                           <MoreVertical size={16} />
                       </button>
 
-                      {/* ΔΙΟΡΘΩΜΕΝΟ CONTEXT MENU ΜΕ ΜΕΓΑΛΥΤΕΡΑ ΓΡΑΜΜΑΤΑ */}
                       {activeMenu === track.id && (
                           <div className="absolute bottom-full left-0 mb-3 w-52 bg-[#0a0a0a] border border-white/10 rounded-2xl shadow-2xl py-3 z-[150] backdrop-blur-xl">
                               <button onClick={() => handleDownload(track)} className="w-full flex items-center gap-3 px-5 py-3 text-zinc-300 hover:bg-white/5 hover:text-white transition-all border-b border-white/5">
@@ -288,7 +287,6 @@ const MusicApp = () => {
           )}
         </div>
 
-        {/* PLAYER */}
         {playingTrack && (
           <div className="fixed bottom-0 left-0 right-0 bg-black/95 backdrop-blur-xl border-t border-white/5 px-8 py-4 flex items-center justify-between z-[200]">
             <div className="flex items-center gap-4 w-64">
