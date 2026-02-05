@@ -169,8 +169,8 @@ const MusicApp = () => {
           </div>
 
           <div className="flex items-center gap-6 pr-12">
-            <button className="text-[15px] font-bold capitalize text-zinc-400 text-white hover:text-[#6366f1] transition-colors">Install</button>
-            <button className="text-[15px] font-bold capitalize  text-zinc-400 text-white hover:text-[#6366f1] transition-colors">Log In</button>
+            <button className="text-[15px] font-bold capitalize text-white hover:text-[#6366f1] transition-colors">Install</button>
+            <button className="text-[15px] font-bold capitalize  text-white hover:text-[#6366f1] transition-colors">Log In</button>
             <button className="bg-white text-black text-[14px] font-black capitalize px-6 py-2 rounded-full border border-transparent hover:bg-transparent hover:border-[#6366f1] hover:text-[#6366f1] transition-all duration-300">
               Sign Up
             </button>
@@ -191,8 +191,8 @@ const MusicApp = () => {
             </div>
 
             {view === 'library' && favorites.length > 0 && (
-              /* ΑΛΛΑΓΗ ΕΔΩ: bg-zinc-200 (λιγότερο φωτεινό από το καθαρό λευκό) */
-              <button 
+           
+             <button 
                 onClick={clearLibrary}
                 className="flex items-center gap-2 px-5 py-2 rounded-lg bg-zinc-200 hover:bg-zinc-300 transition-all duration-300 group mt-2 shadow-md ml-16"
               >
