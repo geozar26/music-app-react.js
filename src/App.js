@@ -32,17 +32,7 @@ const MusicApp = () => {
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
-  const playNext = () => {
-    const currentList = view === 'library' ? favorites : tracks;
-    const currentIndex = currentList.findIndex(t => t.id === playingTrack?.id);
-    if (currentIndex !== -1 && currentIndex < currentList.length - 1) {
-      const nextTrack = currentList[currentIndex + 1];
-      audioRef.current.src = nextTrack.preview;
-      setPlayingTrack(nextTrack);
-      audioRef.current.play();
-    }
-  };
-
+  // Setup Audio Listeners (Μόνο μία φορά στο mount)
   useEffect(() => {
     const savedFavs = JSON.parse(localStorage.getItem('beatstream_favs')) || [];
     const savedHist = JSON.parse(localStorage.getItem('beatstream_history')) || [];
@@ -55,21 +45,33 @@ const MusicApp = () => {
     const updateDuration = () => setDuration(audio.duration || 0);
     const handlePlay = () => setIsPaused(false);
     const handlePause = () => setIsPaused(true);
-    const handleEnded = () => playNext();
 
     audio.addEventListener('timeupdate', updateTime);
     audio.addEventListener('loadedmetadata', updateDuration);
     audio.addEventListener('play', handlePlay);
     audio.addEventListener('pause', handlePause);
-    audio.addEventListener('ended', handleEnded);
 
     return () => {
       audio.removeEventListener('timeupdate', updateTime);
       audio.removeEventListener('loadedmetadata', updateDuration);
       audio.removeEventListener('play', handlePlay);
       audio.removeEventListener('pause', handlePause);
-      audio.removeEventListener('ended', handleEnded);
     };
+  }, []);
+
+  // Ξεχωριστό Effect για το τέλος του τραγουδιού (Auto-next) χωρίς loops
+  useEffect(() => {
+    const handleEnded = () => {
+      const currentList = view === 'library' ? favorites : tracks;
+      const currentIndex = currentList.findIndex(t => t.id === playingTrack?.id);
+      if (currentIndex !== -1 && currentIndex < currentList.length - 1) {
+        const nextTrack = currentList[currentIndex + 1];
+        audioRef.current.src = nextTrack.preview;
+        setPlayingTrack(nextTrack);
+        audioRef.current.play();
+      }
+    };
+    audioRef.current.onended = handleEnded;
   }, [playingTrack, tracks, favorites, view]);
 
   useEffect(() => {
@@ -192,10 +194,7 @@ const MusicApp = () => {
           <div className="flex items-center gap-8 pr-12">
             <button className="text-[15px] font-bold text-white hover:text-[#6366f1] transition-colors">Log In</button>
             <button className="text-[15px] font-bold text-white hover:text-[#6366f1] transition-colors">Install</button>
-            {/* SIGN UP: Transparent background με μωβ κείμενο στο hover */}
-            <button className="bg-white text-black text-[14px] font-black px-6 py-2 rounded-full hover:bg-transparent hover:border-[#6366f1] hover:text-[#6366f1] border border-transparent transition-all">
-              Sign Up
-            </button>
+            <button className="bg-white text-black text-[14px] font-black px-6 py-2 rounded-full hover:bg-transparent hover:border-[#6366f1] hover:text-[#6366f1] border border-transparent transition-all">Sign Up</button>
           </div>
         </header>
 
@@ -211,7 +210,6 @@ const MusicApp = () => {
             </h2>
             
             {view === 'library' && favorites.length > 0 && (
-              /* CLEAR ALL: Μωβ borders και κείμενο στο hover */
               <button 
                 onClick={() => {setFavorites([]); localStorage.removeItem('beatstream_favs');}} 
                 className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:border-[#6366f1] hover:bg-[#6366f1]/10 transition-all group mt-2 ml-10 shadow-lg"
@@ -223,9 +221,8 @@ const MusicApp = () => {
           </div>
 
           {!isLoading && currentList.length === 0 ? (
-            /* NO TRACKS: Χωρίς κίνηση, άμεση εμφάνιση */
             <div className="flex flex-col items-center justify-center py-24 text-zinc-600">
-              <div className="bg-white/5 p-8 rounded-[3rem] mb-6 shadow-inner">
+              <div className="bg-white/5 p-8 rounded-[3rem] mb-6">
                 <Music3 size={64} className="opacity-20 text-[#6366f1]" />
               </div>
               <h3 className="text-xl font-bold text-white mb-2">No tracks found</h3>
@@ -301,7 +298,7 @@ const MusicApp = () => {
                   className="flex-1 h-1.5 bg-white/10 rounded-full relative overflow-hidden cursor-pointer group/bar"
                 >
                   <div 
-                    className="h-full bg-[#6366f1] shadow-[0_0_8px_#6366f1] transition-all duration-100" 
+                    className="h-full bg-[#6366f1] shadow-[0_0_8px_#6366f1]" 
                     style={{ width: `${(currentTime / duration) * 100}%` }}
                   ></div>
                 </div>
