@@ -69,6 +69,23 @@ const MusicApp = () => {
     } catch (err) {} finally { setIsLoading(false); }
   };
 
+  const handleSearch = async (e, override) => {
+    if (e) e.preventDefault();
+    const q = override || searchQuery;
+    if (!q.trim()) return;
+    setIsLoading(true);
+    try {
+      const res = await axios.get(`https://deezerdevs-deezer.p.rapidapi.com/search?q=${q}`, {
+        headers: {
+          'x-rapidapi-key': '84e121a50dmsh4650b0d1f6e44fep1ebe78jsn56932706b2b1',
+          'x-rapidapi-host': 'deezerdevs-deezer.p.rapidapi.com'
+        }
+      });
+      setTracks(res.data.data || []);
+      setView('discover');
+    } catch (err) {} finally { setIsLoading(false); }
+  };
+
   const toggleLike = (e, track) => {
     e.stopPropagation();
     const isAlreadyLiked = favorites.some(f => f.id === track.id);
@@ -77,7 +94,6 @@ const MusicApp = () => {
     localStorage.setItem('beatstream_favs', JSON.stringify(newFavs));
   };
 
-  // Συνάρτηση για να κλείνει ο Player
   const closePlayer = () => {
     audioRef.current.pause();
     setPlayingTrack(null);
@@ -110,6 +126,7 @@ const MusicApp = () => {
                 placeholder="Search..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               />
               {searchQuery && (
                 <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/10 text-white w-6 h-6 rounded-full flex items-center justify-center hover:bg-white/20">
@@ -118,9 +135,12 @@ const MusicApp = () => {
               )}
             </div>
           </div>
-          <div className="flex items-center gap-6 pr-12">
+          
+          {/* ΕΠΑΝΑΦΟΡΑ LOG IN ΚΑΙ INSTALL */}
+          <div className="flex items-center gap-8 pr-12">
+            <button className="text-[15px] font-bold text-white hover:text-[#6366f1] transition-colors">Log In</button>
             <button className="text-[15px] font-bold text-white hover:text-[#6366f1] transition-colors">Install</button>
-            <button className="bg-white text-black text-[14px] font-black px-6 py-2 rounded-full">Sign Up</button>
+            <button className="bg-white text-black text-[14px] font-black px-6 py-2 rounded-full hover:bg-transparent hover:border-white hover:text-white border border-transparent transition-all">Sign Up</button>
           </div>
         </header>
 
@@ -130,19 +150,14 @@ const MusicApp = () => {
               <div key={track.id} className="bg-[#111111]/40 p-4 rounded-[2rem] border border-white/5 relative group">
                 <div className="relative mb-4 aspect-square rounded-[1.5rem] overflow-hidden shadow-2xl">
                   <img src={track.album?.cover_medium} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="" />
-                  <button onClick={() => {if (playingTrack?.id === track.id) {isPaused ? audioRef.current.play() : audioRef.current.pause();} else {audioRef.current.src = track.preview; setPlayingTrack(track); audioRef.current.play();}}} className="absolute inset-0 m-auto w-12 h-12 bg-[#6366f1] rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-xl">
+                  <button onClick={() => {if (playingTrack?.id === track.id) {isPaused ? audioRef.current.play() : audioRef.current.pause();} else {audioRef.current.src = track.preview; setPlayingTrack(track); audioRef.current.play();}}} className="absolute inset-0 m-auto w-12 h-12 bg-[#6366f1] rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
                     {playingTrack?.id === track.id && !isPaused ? <Pause size={20} fill="white" /> : <Play size={20} fill="white" className="ml-1" />}
                   </button>
                 </div>
-                
                 <h3 className="font-bold truncate text-xs mb-1">{track.title}</h3>
                 <p className="text-[10px] text-zinc-500 truncate mb-4 uppercase font-bold tracking-wider">{track.artist?.name}</p>
-
-                {/* ΕΠΙΣΤΡΟΦΗ ΤΡΙΩΝ ΤΕΛΙΤΣΩΝ ΚΑΙ ΚΑΡΔΙΑΣ ΣΤΟ GRID */}
                 <div className="flex justify-between items-center relative">
-                  <button onClick={(e) => {e.stopPropagation(); setActiveMenu(activeMenu === track.id ? null : track.id);}} className="text-zinc-600 hover:text-white transition-colors">
-                    <MoreVertical size={16} />
-                  </button>
+                  <button onClick={(e) => {e.stopPropagation(); setActiveMenu(activeMenu === track.id ? null : track.id);}} className="text-zinc-600 hover:text-white transition-colors"><MoreVertical size={16} /></button>
                   <button onClick={(e) => toggleLike(e, track)}>
                     <Heart size={18} className={favorites.some(f => f.id === track.id) ? "text-red-500 fill-red-500 scale-110" : "text-zinc-800 hover:text-zinc-400"} />
                   </button>
@@ -152,34 +167,33 @@ const MusicApp = () => {
           </div>
         </div>
 
-        {/* ΕΠΑΓΓΕΛΜΑΤΙΚΗ ΜΠΑΡΑ ΜΕ ΚΟΥΜΠΙ ΚΛΕΙΣΙΜΑΤΟΣ (X) */}
+        {/* PLAYER BAR - IMPROVED ALIGNMENT */}
         {playingTrack && (
-          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-[900px] bg-black/80 backdrop-blur-2xl border border-white/10 p-4 rounded-[2.5rem] flex items-center gap-8 shadow-2xl z-[200]">
-            <div className="flex items-center gap-4 w-64">
+          <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-[850px] bg-black/90 backdrop-blur-2xl border border-white/10 p-4 rounded-[2.5rem] flex items-center justify-between shadow-2xl z-[200]">
+            <div className="flex items-center gap-4 w-[30%]">
               <img src={playingTrack.album?.cover_small} className="w-12 h-12 rounded-xl" alt="" />
               <div className="truncate">
-                <h4 className="text-xs font-black truncate">{playingTrack.title}</h4>
+                <h4 className="text-[12px] font-bold truncate">{playingTrack.title}</h4>
                 <p className="text-[10px] text-zinc-400 font-bold uppercase truncate">{playingTrack.artist?.name}</p>
               </div>
             </div>
 
-            <div className="flex-1 flex flex-col items-center gap-2">
+            <div className="flex-1 flex flex-col items-center gap-2 max-w-[40%]">
               <button onClick={() => isPaused ? audioRef.current.play() : audioRef.current.pause()} className="bg-white p-2 rounded-full hover:scale-110 transition-transform">
                 {isPaused ? <Play size={20} fill="black" className="text-black ml-0.5" /> : <Pause size={20} fill="black" className="text-black" />}
               </button>
               <div className="w-full flex items-center gap-3">
                 <span className="text-[10px] font-bold text-zinc-500 w-10 text-right">{formatTime(currentTime)}</span>
-                <div className="flex-1 h-1 bg-white/10 rounded-full relative overflow-hidden">
+                <div className="flex-1 h-1.5 bg-white/10 rounded-full relative overflow-hidden">
                   <div className="h-full bg-[#6366f1]" style={{ width: `${(currentTime / duration) * 100}%` }}></div>
                 </div>
                 <span className="text-[10px] font-bold text-zinc-500 w-10">{formatTime(duration)}</span>
               </div>
             </div>
 
-            <div className="w-64 flex justify-end">
-              {/* ΑΛΛΑΓΗ: X BUTTON ΓΙΑ ΝΑ ΚΛΕΙΝΕΙ Ο PLAYER */}
+            <div className="w-[30%] flex justify-end pr-2">
               <button onClick={closePlayer} className="text-zinc-500 hover:text-white transition-colors bg-white/5 p-2 rounded-full">
-                <X size={20} strokeWidth={3} />
+                <X size={18} strokeWidth={3} />
               </button>
             </div>
           </div>
