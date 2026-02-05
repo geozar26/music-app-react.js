@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Search, Play, Heart, Music, Library as LibraryIcon, 
@@ -33,6 +32,17 @@ const MusicApp = () => {
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
+  const playNext = () => {
+    const currentList = view === 'library' ? favorites : tracks;
+    const currentIndex = currentList.findIndex(t => t.id === playingTrack?.id);
+    if (currentIndex !== -1 && currentIndex < currentList.length - 1) {
+      const nextTrack = currentList[currentIndex + 1];
+      audioRef.current.src = nextTrack.preview;
+      setPlayingTrack(nextTrack);
+      audioRef.current.play();
+    }
+  };
+
   useEffect(() => {
     const savedFavs = JSON.parse(localStorage.getItem('beatstream_favs')) || [];
     const savedHist = JSON.parse(localStorage.getItem('beatstream_history')) || [];
@@ -45,19 +55,22 @@ const MusicApp = () => {
     const updateDuration = () => setDuration(audio.duration || 0);
     const handlePlay = () => setIsPaused(false);
     const handlePause = () => setIsPaused(true);
+    const handleEnded = () => playNext();
 
     audio.addEventListener('timeupdate', updateTime);
     audio.addEventListener('loadedmetadata', updateDuration);
     audio.addEventListener('play', handlePlay);
     audio.addEventListener('pause', handlePause);
+    audio.addEventListener('ended', handleEnded);
 
     return () => {
       audio.removeEventListener('timeupdate', updateTime);
       audio.removeEventListener('loadedmetadata', updateDuration);
       audio.removeEventListener('play', handlePlay);
       audio.removeEventListener('pause', handlePause);
+      audio.removeEventListener('ended', handleEnded);
     };
-  }, []);
+  }, [playingTrack, tracks, favorites, view]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -137,7 +150,7 @@ const MusicApp = () => {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
               <input 
                 type="text" 
-                className="w-full bg-[#111111] rounded-xl py-2.5 px-10 outline-none text-white border border-white/5 focus:border-white/20 transition-all"
+                className="w-full bg-[#111111] rounded-xl py-2.5 px-10 outline-none text-white border border-white/5 focus:border-[#6366f1]/40 transition-all"
                 placeholder="Search..." 
                 value={searchQuery}
                 onFocus={() => setShowHistory(true)}
@@ -179,7 +192,10 @@ const MusicApp = () => {
           <div className="flex items-center gap-8 pr-12">
             <button className="text-[15px] font-bold text-white hover:text-[#6366f1] transition-colors">Log In</button>
             <button className="text-[15px] font-bold text-white hover:text-[#6366f1] transition-colors">Install</button>
-            <button className="bg-white text-black text-[14px] font-black px-6 py-2 rounded-full hover:bg-transparent hover:border-[#6366f1] hover:text-[#6366f1] border border-transparent transition-all">Sign Up</button>
+            {/* SIGN UP: Transparent background με μωβ κείμενο στο hover */}
+            <button className="bg-white text-black text-[14px] font-black px-6 py-2 rounded-full hover:bg-transparent hover:border-[#6366f1] hover:text-[#6366f1] border border-transparent transition-all">
+              Sign Up
+            </button>
           </div>
         </header>
 
@@ -195,9 +211,10 @@ const MusicApp = () => {
             </h2>
             
             {view === 'library' && favorites.length > 0 && (
+              /* CLEAR ALL: Μωβ borders και κείμενο στο hover */
               <button 
                 onClick={() => {setFavorites([]); localStorage.removeItem('beatstream_favs');}} 
-                className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:border-[#6366f1]/50 hover:bg-[#6366f1]/10 transition-all group mt-2 ml-10 shadow-lg"
+                className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:border-[#6366f1] hover:bg-[#6366f1]/10 transition-all group mt-2 ml-10 shadow-lg"
               >
                 <X size={14} className="text-white group-hover:text-[#6366f1] group-hover:rotate-90 transition-all" strokeWidth={3} />
                 <span className="text-[11px] font-black uppercase tracking-widest text-white group-hover:text-[#6366f1]">Clear All</span>
@@ -206,6 +223,7 @@ const MusicApp = () => {
           </div>
 
           {!isLoading && currentList.length === 0 ? (
+            /* NO TRACKS: Χωρίς κίνηση, άμεση εμφάνιση */
             <div className="flex flex-col items-center justify-center py-24 text-zinc-600">
               <div className="bg-white/5 p-8 rounded-[3rem] mb-6 shadow-inner">
                 <Music3 size={64} className="opacity-20 text-[#6366f1]" />
@@ -277,7 +295,6 @@ const MusicApp = () => {
               </button>
               <div className="w-full flex items-center gap-3">
                 <span className="text-[10px] font-bold text-zinc-500 w-10 text-right tabular-nums">{formatTime(currentTime)}</span>
-                {/* ΔΙΑΔΡΑΣΤΙΚΗ ΜΠΑΡΑ ΠΡΟΟΔΟΥ */}
                 <div 
                   ref={progressBarRef}
                   onClick={handleSeek}
