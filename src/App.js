@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Search, Play, Heart, Music, Library as LibraryIcon, 
@@ -23,6 +24,7 @@ const MusicApp = () => {
 
   const audioRef = useRef(new Audio());
   const searchRef = useRef(null);
+  const progressBarRef = useRef(null);
 
   const formatTime = (time) => {
     if (isNaN(time)) return "0:00";
@@ -66,6 +68,14 @@ const MusicApp = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const handleSeek = (e) => {
+    if (!audioRef.current || !duration) return;
+    const rect = progressBarRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const clickedValue = (x / rect.width) * duration;
+    audioRef.current.currentTime = clickedValue;
+  };
 
   const fetchTrending = async () => {
     setIsLoading(true);
@@ -196,7 +206,7 @@ const MusicApp = () => {
           </div>
 
           {!isLoading && currentList.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-24 text-zinc-600 animate-in fade-in duration-700">
+            <div className="flex flex-col items-center justify-center py-24 text-zinc-600">
               <div className="bg-white/5 p-8 rounded-[3rem] mb-6 shadow-inner">
                 <Music3 size={64} className="opacity-20 text-[#6366f1]" />
               </div>
@@ -219,7 +229,7 @@ const MusicApp = () => {
                     <button onClick={(e) => {e.stopPropagation(); setActiveMenu(activeMenu === track.id ? null : track.id);}} className="text-zinc-600 hover:text-white transition-colors"><MoreVertical size={16} /></button>
                     
                     {activeMenu === track.id && (
-                      <div className="absolute bottom-8 left-0 w-40 bg-[#0a0a0a] border border-white/10 rounded-2xl p-2 shadow-2xl z-[160] backdrop-blur-xl animate-in zoom-in duration-150">
+                      <div className="absolute bottom-8 left-0 w-40 bg-[#0a0a0a] border border-white/10 rounded-2xl p-2 shadow-2xl z-[160] backdrop-blur-xl">
                         <button className="w-full flex items-center gap-3 px-3 py-2 hover:bg-white/5 rounded-xl transition-all group">
                           <Download size={14} className="text-zinc-500 group-hover:text-[#6366f1]" />
                           <span className="text-xs font-bold text-zinc-400 group-hover:text-white">Download</span>
@@ -267,8 +277,16 @@ const MusicApp = () => {
               </button>
               <div className="w-full flex items-center gap-3">
                 <span className="text-[10px] font-bold text-zinc-500 w-10 text-right tabular-nums">{formatTime(currentTime)}</span>
-                <div className="flex-1 h-1.5 bg-white/10 rounded-full relative overflow-hidden">
-                  <div className="h-full bg-[#6366f1] shadow-[0_0_8px_#6366f1]" style={{ width: `${(currentTime / duration) * 100}%` }}></div>
+                {/* ΔΙΑΔΡΑΣΤΙΚΗ ΜΠΑΡΑ ΠΡΟΟΔΟΥ */}
+                <div 
+                  ref={progressBarRef}
+                  onClick={handleSeek}
+                  className="flex-1 h-1.5 bg-white/10 rounded-full relative overflow-hidden cursor-pointer group/bar"
+                >
+                  <div 
+                    className="h-full bg-[#6366f1] shadow-[0_0_8px_#6366f1] transition-all duration-100" 
+                    style={{ width: `${(currentTime / duration) * 100}%` }}
+                  ></div>
                 </div>
                 <span className="text-[10px] font-bold text-zinc-500 w-10 tabular-nums">{formatTime(duration)}</span>
               </div>
