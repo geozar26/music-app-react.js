@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Search, Play, Heart, Music, Library as LibraryIcon, 
@@ -58,6 +57,16 @@ const MusicApp = () => {
     };
   }, []);
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowHistory(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const fetchTrending = async () => {
     setIsLoading(true);
     try {
@@ -96,7 +105,7 @@ const MusicApp = () => {
   const currentList = view === 'library' ? favorites : tracks;
 
   return (
-    <div className="flex min-h-screen bg-[#020205] text-white font-sans select-none" onClick={() => {setActiveMenu(null); setShowHistory(false);}}>
+    <div className="flex min-h-screen bg-[#020205] text-white font-sans select-none" onClick={() => setActiveMenu(null)}>
       
       <aside className="w-64 bg-black flex flex-col p-6 border-r border-white/5 shrink-0 h-screen sticky top-0">
         <div className="flex items-center gap-2 mb-10 cursor-pointer" onClick={() => setView('discover')}>
@@ -114,7 +123,7 @@ const MusicApp = () => {
       <main className="flex-1 flex flex-col relative pb-40">
         <header className="p-4 flex items-center justify-between z-[100] bg-[#020205]/80 backdrop-blur-md sticky top-0">
           <div className="w-[450px] relative" ref={searchRef}>
-            <div className="relative group">
+            <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
               <input 
                 type="text" 
@@ -126,14 +135,14 @@ const MusicApp = () => {
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               />
               {searchQuery && (
-                <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/10 text-white hover:text-[#6366f1] w-6 h-6 rounded-full flex items-center justify-center transition-colors">
-                  <X size={12} strokeWidth={3} />
+                <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-white hover:text-[#6366f1] transition-colors">
+                  <X size={16} strokeWidth={3} />
                 </button>
               )}
             </div>
 
             {showHistory && searchHistory.length > 0 && (
-              <div className="absolute top-[110%] left-0 w-full bg-[#0a0a0a] border border-white/10 rounded-2xl p-1 shadow-2xl z-[150] backdrop-blur-xl">
+              <div className="absolute top-[115%] left-0 w-full bg-[#0a0a0a] border border-white/10 rounded-2xl p-1 shadow-2xl z-[150] backdrop-blur-xl">
                 {searchHistory.filter(item => item.toLowerCase().startsWith(searchQuery.toLowerCase())).map((h, i) => (
                   <div key={i} className="flex items-center justify-between group hover:bg-white/5 rounded-xl transition-all cursor-pointer">
                     <div onClick={() => handleSearch(null, h)} className="flex-1 flex items-center gap-3 px-3 py-2.5">
@@ -147,9 +156,9 @@ const MusicApp = () => {
                         setSearchHistory(newHist);
                         localStorage.setItem('beatstream_history', JSON.stringify(newHist));
                       }}
-                      className="mr-2 p-1 text-zinc-600 hover:text-[#6366f1] transition-colors"
+                      className="mr-2 p-1.5 text-white hover:text-[#6366f1] transition-all"
                     >
-                      <X size={14} />
+                      <X size={14} strokeWidth={3} />
                     </button>
                   </div>
                 ))}
@@ -178,15 +187,15 @@ const MusicApp = () => {
             {view === 'library' && favorites.length > 0 && (
               <button 
                 onClick={() => {setFavorites([]); localStorage.removeItem('beatstream_favs');}} 
-                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 hover:border-[#6366f1]/50 hover:bg-[#6366f1]/10 transition-all group mt-2 ml-10"
+                className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:border-[#6366f1]/50 hover:bg-[#6366f1]/10 transition-all group mt-2 ml-10 shadow-lg"
               >
-                <X size={14} className="text-zinc-500 group-hover:text-[#6366f1] group-hover:rotate-90 transition-all" strokeWidth={3} />
-                <span className="text-[11px] font-black uppercase tracking-widest text-zinc-500 group-hover:text-[#6366f1]">Clear All</span>
+                <X size={14} className="text-white group-hover:text-[#6366f1] group-hover:rotate-90 transition-all" strokeWidth={3} />
+                <span className="text-[11px] font-black uppercase tracking-widest text-white group-hover:text-[#6366f1]">Clear All</span>
               </button>
             )}
           </div>
 
-          {currentList.length === 0 ? (
+          {!isLoading && currentList.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24 text-zinc-600 animate-in fade-in duration-700">
               <div className="bg-white/5 p-8 rounded-[3rem] mb-6 shadow-inner">
                 <Music3 size={64} className="opacity-20 text-[#6366f1]" />
@@ -246,7 +255,7 @@ const MusicApp = () => {
         {playingTrack && (
           <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-[850px] bg-black/90 backdrop-blur-2xl border border-white/10 p-4 rounded-[2.5rem] flex items-center justify-between shadow-2xl z-[200]">
             <div className="flex items-center gap-4 w-[30%]">
-              <img src={playingTrack.album?.cover_small} className="w-12 h-12 rounded-xl" alt="" />
+              <img src={playingTrack.album?.cover_small} className="w-12 h-12 rounded-xl shadow-md" alt="" />
               <div className="truncate text-white">
                 <h4 className="text-[12px] font-bold truncate">{playingTrack.title}</h4>
                 <p className="text-[10px] text-zinc-400 font-bold uppercase truncate">{playingTrack.artist?.name}</p>
@@ -259,13 +268,13 @@ const MusicApp = () => {
               <div className="w-full flex items-center gap-3">
                 <span className="text-[10px] font-bold text-zinc-500 w-10 text-right tabular-nums">{formatTime(currentTime)}</span>
                 <div className="flex-1 h-1.5 bg-white/10 rounded-full relative overflow-hidden">
-                  <div className="h-full bg-[#6366f1]" style={{ width: `${(currentTime / duration) * 100}%` }}></div>
+                  <div className="h-full bg-[#6366f1] shadow-[0_0_8px_#6366f1]" style={{ width: `${(currentTime / duration) * 100}%` }}></div>
                 </div>
                 <span className="text-[10px] font-bold text-zinc-500 w-10 tabular-nums">{formatTime(duration)}</span>
               </div>
             </div>
             <div className="w-[30%] flex justify-end pr-2">
-              <button onClick={() => setPlayingTrack(null)} className="text-zinc-500 hover:text-[#6366f1] transition-colors bg-white/5 p-2.5 rounded-full hover:bg-white/10">
+              <button onClick={() => setPlayingTrack(null)} className="text-white hover:text-[#6366f1] transition-colors bg-white/5 p-2.5 rounded-full hover:bg-white/10">
                 <X size={18} strokeWidth={3} />
               </button>
             </div>
