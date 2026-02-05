@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Search, Play, Heart, Music, Library as LibraryIcon, 
-  MoreVertical, ChevronLeft, Pause, History, X, Download, Gauge, 
+  MoreVertical, Pause, History, X, Download, Gauge, 
   Music2 
 } from 'lucide-react';
 import axios from 'axios';
@@ -94,6 +94,11 @@ const MusicApp = () => {
     localStorage.setItem('beatstream_favs', JSON.stringify(newFavs));
   };
 
+  const clearLibrary = () => {
+    setFavorites([]);
+    localStorage.setItem('beatstream_favs', JSON.stringify([]));
+  };
+
   const closePlayer = () => {
     audioRef.current.pause();
     setPlayingTrack(null);
@@ -136,7 +141,6 @@ const MusicApp = () => {
             </div>
           </div>
           
-          {/* ΕΠΑΝΑΦΟΡΑ LOG IN ΚΑΙ INSTALL */}
           <div className="flex items-center gap-8 pr-12">
             <button className="text-[15px] font-bold text-white hover:text-[#6366f1] transition-colors">Log In</button>
             <button className="text-[15px] font-bold text-white hover:text-[#6366f1] transition-colors">Install</button>
@@ -145,18 +149,39 @@ const MusicApp = () => {
         </header>
 
         <div className="p-8">
+          {/* ΤΙΤΛΟΣ ΧΩΡΙΣ ΒΕΛΑΚΙ ΚΑΙ ΜΕ CLEAR ALL */}
+          <div className="flex items-center justify-between mb-10">
+            <h2 className="text-[44px] font-black capitalize italic tracking-tighter">
+              {view === 'discover' ? 'Discover' : 'My Library'}
+            </h2>
+
+            {view === 'library' && favorites.length > 0 && (
+              <button 
+                onClick={clearLibrary}
+                className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:bg-red-500/10 hover:border-red-500/50 transition-all group shadow-lg"
+              >
+                <div className="bg-red-500/20 p-1 rounded-full group-hover:bg-red-500 group-hover:rotate-90 transition-all">
+                  <X size={12} className="text-red-500 group-hover:text-white" strokeWidth={3} />
+                </div>
+                <span className="text-[12px] font-black uppercase tracking-widest text-zinc-400 group-hover:text-red-500">
+                  Clear All
+                </span>
+              </button>
+            )}
+          </div>
+
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
             {(view === 'library' ? favorites : tracks).map(track => (
               <div key={track.id} className="bg-[#111111]/40 p-4 rounded-[2rem] border border-white/5 relative group">
                 <div className="relative mb-4 aspect-square rounded-[1.5rem] overflow-hidden shadow-2xl">
                   <img src={track.album?.cover_medium} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="" />
-                  <button onClick={() => {if (playingTrack?.id === track.id) {isPaused ? audioRef.current.play() : audioRef.current.pause();} else {audioRef.current.src = track.preview; setPlayingTrack(track); audioRef.current.play();}}} className="absolute inset-0 m-auto w-12 h-12 bg-[#6366f1] rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
+                  <button onClick={() => {if (playingTrack?.id === track.id) {isPaused ? audioRef.current.play() : audioRef.current.pause();} else {audioRef.current.src = track.preview; setPlayingTrack(track); audioRef.current.play();}}} className="absolute inset-0 m-auto w-12 h-12 bg-[#6366f1] rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-xl">
                     {playingTrack?.id === track.id && !isPaused ? <Pause size={20} fill="white" /> : <Play size={20} fill="white" className="ml-1" />}
                   </button>
                 </div>
                 <h3 className="font-bold truncate text-xs mb-1">{track.title}</h3>
                 <p className="text-[10px] text-zinc-500 truncate mb-4 uppercase font-bold tracking-wider">{track.artist?.name}</p>
-                <div className="flex justify-between items-center relative">
+                <div className="flex justify-between items-center">
                   <button onClick={(e) => {e.stopPropagation(); setActiveMenu(activeMenu === track.id ? null : track.id);}} className="text-zinc-600 hover:text-white transition-colors"><MoreVertical size={16} /></button>
                   <button onClick={(e) => toggleLike(e, track)}>
                     <Heart size={18} className={favorites.some(f => f.id === track.id) ? "text-red-500 fill-red-500 scale-110" : "text-zinc-800 hover:text-zinc-400"} />
@@ -167,40 +192,13 @@ const MusicApp = () => {
           </div>
         </div>
 
-        {/* PLAYER BAR - IMPROVED ALIGNMENT */}
+        {/* PLAYER BAR */}
         {playingTrack && (
           <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-[850px] bg-black/90 backdrop-blur-2xl border border-white/10 p-4 rounded-[2.5rem] flex items-center justify-between shadow-2xl z-[200]">
             <div className="flex items-center gap-4 w-[30%]">
-              <img src={playingTrack.album?.cover_small} className="w-12 h-12 rounded-xl" alt="" />
+              <img src={playingTrack.album?.cover_small} className="w-12 h-12 rounded-xl shadow-md border border-white/5" alt="" />
               <div className="truncate">
                 <h4 className="text-[12px] font-bold truncate">{playingTrack.title}</h4>
                 <p className="text-[10px] text-zinc-400 font-bold uppercase truncate">{playingTrack.artist?.name}</p>
               </div>
             </div>
-
-            <div className="flex-1 flex flex-col items-center gap-2 max-w-[40%]">
-              <button onClick={() => isPaused ? audioRef.current.play() : audioRef.current.pause()} className="bg-white p-2 rounded-full hover:scale-110 transition-transform">
-                {isPaused ? <Play size={20} fill="black" className="text-black ml-0.5" /> : <Pause size={20} fill="black" className="text-black" />}
-              </button>
-              <div className="w-full flex items-center gap-3">
-                <span className="text-[10px] font-bold text-zinc-500 w-10 text-right">{formatTime(currentTime)}</span>
-                <div className="flex-1 h-1.5 bg-white/10 rounded-full relative overflow-hidden">
-                  <div className="h-full bg-[#6366f1]" style={{ width: `${(currentTime / duration) * 100}%` }}></div>
-                </div>
-                <span className="text-[10px] font-bold text-zinc-500 w-10">{formatTime(duration)}</span>
-              </div>
-            </div>
-
-            <div className="w-[30%] flex justify-end pr-2">
-              <button onClick={closePlayer} className="text-zinc-500 hover:text-white transition-colors bg-white/5 p-2 rounded-full">
-                <X size={18} strokeWidth={3} />
-              </button>
-            </div>
-          </div>
-        )}
-      </main>
-    </div>
-  );
-};
-
-export default MusicApp;
