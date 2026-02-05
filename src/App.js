@@ -202,3 +202,30 @@ const MusicApp = () => {
                 <p className="text-[10px] text-zinc-400 font-bold uppercase truncate">{playingTrack.artist?.name}</p>
               </div>
             </div>
+
+            <div className="flex-1 flex flex-col items-center gap-2 max-w-[40%]">
+              <button onClick={() => isPaused ? audioRef.current.play() : audioRef.current.pause()} className="bg-white p-2 rounded-full hover:scale-110 active:scale-95 transition-all shadow-lg">
+                {isPaused ? <Play size={20} fill="black" className="text-black ml-0.5" /> : <Pause size={20} fill="black" className="text-black" />}
+              </button>
+              <div className="w-full flex items-center gap-3">
+                <span className="text-[10px] font-bold text-zinc-500 w-10 text-right tabular-nums">{formatTime(currentTime)}</span>
+                <div className="flex-1 h-1.5 bg-white/10 rounded-full relative overflow-hidden">
+                  <div className="h-full bg-[#6366f1] shadow-[0_0_8px_#6366f1]" style={{ width: `${(currentTime / duration) * 100}%` }}></div>
+                </div>
+                <span className="text-[10px] font-bold text-zinc-500 w-10 tabular-nums">{formatTime(duration)}</span>
+              </div>
+            </div>
+
+            <div className="w-[30%] flex justify-end pr-2">
+              <button onClick={closePlayer} className="text-zinc-500 hover:text-white transition-colors bg-white/5 p-2.5 rounded-full hover:bg-white/10 border border-white/5 active:scale-90">
+                <X size={18} strokeWidth={3} />
+              </button>
+            </div>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+};
+
+export default MusicApp;
