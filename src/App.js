@@ -263,33 +263,7 @@ const MusicApp = () => {
                   <div className="flex justify-between items-center relative">
                     <button onClick={(e) => {e.stopPropagation(); setActiveMenu(activeMenu === track.id ? null : track.id);}} className="text-zinc-600 hover:text-white transition-colors"><MoreVertical size={16} /></button>
                     
-                    {activeMenu === track.id && (
-                      <div className="absolute bottom-8 left-0 w-40 bg-[#0a0a0a] border border-white/10 rounded-2xl p-2 shadow-2xl z-[160] backdrop-blur-xl">
-                        <button className="w-full flex items-center gap-3 px-3 py-2 hover:bg-white/5 rounded-xl transition-all group">
-                          <Download size={14} className="text-zinc-500 group-hover:text-[#6366f1]" />
-                          <span className="text-xs font-bold text-zinc-400 group-hover:text-white">Download</span>
-                        </button>
-                        <div className="h-[1px] bg-white/5 my-1" />
-                        <div className="px-3 py-1 text-[10px] font-black uppercase tracking-widest text-zinc-600 flex items-center gap-2">
-                          <Zap size={10} className="text-[#6366f1]" /> Speed
-                        </div>
-                        <div className="grid grid-cols-3 gap-1 px-1">
-                          {[0.5, 1, 1.5].map(s => (
-                            <button 
-                              key={s} 
-                              onClick={() => {
-                                setPlaybackRate(s); 
-                                audioRef.current.playbackRate = s; 
-                                setActiveMenu(null);
-                              }} 
-                              className={`py-1 rounded-lg text-[10px] font-bold transition-all ${playbackRate === s ? 'bg-[#6366f1] text-white' : 'bg-white/5 text-zinc-500 hover:bg-white/10'}`}
-                            >
-                              {s}x
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                
 
                     <button onClick={(e) => {
                       e.stopPropagation();
@@ -306,6 +280,44 @@ const MusicApp = () => {
             </div>
           )}
         </div>
+
+      {/* ... υπόλοιπος κώδικας ίδιος ... */}
+
+{activeMenu === track.id && (
+  <div className="absolute bottom-8 left-0 w-40 bg-[#0a0a0a] border border-white/10 rounded-2xl p-2 shadow-2xl z-[160] backdrop-blur-xl">
+    <button className="w-full flex items-center gap-3 px-3 py-2 hover:bg-white/5 rounded-xl transition-all group">
+      <Download size={14} className="text-zinc-500 group-hover:text-[#6366f1]" />
+      <span className="text-xs font-bold text-zinc-400 group-hover:text-white">Download</span>
+    </button>
+    <div className="h-[1px] bg-white/5 my-1" />
+    
+    {/* Εδώ είναι η αλλαγή με το νέο καθαρό εικονίδιο */}
+    <div className="px-3 py-1 text-[10px] font-black uppercase tracking-widest text-zinc-400 flex items-center gap-2">
+      <div className="w-4 h-4 flex items-center justify-center">
+        <Zap size={12} className="text-[#6366f1] fill-[#6366f1]/20" /> 
+      </div>
+      Speed
+    </div>
+
+    <div className="grid grid-cols-3 gap-1 px-1">
+      {[0.5, 1, 1.5].map(s => (
+        <button 
+          key={s} 
+          onClick={() => {
+            setPlaybackRate(s); 
+            audioRef.current.playbackRate = s; 
+            setActiveMenu(null);
+          }} 
+          className={`py-1 rounded-lg text-[10px] font-bold transition-all ${playbackRate === s ? 'bg-[#6366f1] text-white' : 'bg-white/5 text-zinc-500 hover:bg-white/10'}`}
+        >
+          {s}x
+        </button>
+      ))}
+    </div>
+  </div>
+)}
+
+
 
         {playingTrack && (
           <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-[850px] bg-black/90 backdrop-blur-2xl border border-white/10 p-4 rounded-[2.5rem] flex items-center justify-between shadow-2xl z-[200]">
