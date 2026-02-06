@@ -20,6 +20,9 @@ const MusicApp = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [favorites, setFavorites] = useState([]);
   const [searchHistory, setSearchHistory] = useState([]);
+  
+  // State για το dragging της μπάρας
+  const [isDragging, setIsDragging] = useState(false);
 
   const audioRef = useRef(new Audio());
   const searchRef = useRef(null);
@@ -32,7 +35,6 @@ const MusicApp = () => {
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
-  // Setup Audio Listeners (Μόνο μία φορά στο mount)
   useEffect(() => {
     const savedFavs = JSON.parse(localStorage.getItem('beatstream_favs')) || [];
     const savedHist = JSON.parse(localStorage.getItem('beatstream_history')) || [];
@@ -41,7 +43,9 @@ const MusicApp = () => {
     fetchTrending();
 
     const audio = audioRef.current;
-    const updateTime = () => setCurrentTime(audio.currentTime);
+    const updateTime = () => {
+      if (!isDragging) setCurrentTime(audio.currentTime);
+    };
     const updateDuration = () => setDuration(audio.duration || 0);
     const handlePlay = () => setIsPaused(false);
     const handlePause = () => setIsPaused(true);
@@ -57,9 +61,8 @@ const MusicApp = () => {
       audio.removeEventListener('play', handlePlay);
       audio.removeEventListener('pause', handlePause);
     };
-  }, []);
+  }, [isDragging]);
 
-  // Ξεχωριστό Effect για το τέλος του τραγουδιού (Auto-next) χωρίς loops
   useEffect(() => {
     const handleEnded = () => {
       const currentList = view === 'library' ? favorites : tracks;
@@ -74,23 +77,44 @@ const MusicApp = () => {
     audioRef.current.onended = handleEnded;
   }, [playingTrack, tracks, favorites, view]);
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (searchRef.current && !searchRef.current.contains(event.target)) {
-        setShowHistory(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const handleSeek = (e) => {
-    if (!audioRef.current || !duration) return;
-    const rect = progressBarRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const clickedValue = (x / rect.width) * duration;
-    audioRef.current.currentTime = clickedValue;
+  // Logic για το συνεχόμενο dragging της μπάρας
+  const handleMouseDown = (e) => {
+    setIsDragging(true);
+    handleScrub(e);
   };
+
+  const handleMouseMove = (e) => {
+    if (isDragging) handleScrub(e);
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleScrub = (e) => {
+    if (!audioRef.current || !duration || !progressBarRef.current) return;
+    const rect = progressBarRef.current.getBoundingClientRect();
+    const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+    const newPercentage = x / rect.width;
+    const newTime = newPercentage * duration;
+    
+    setCurrentTime(newTime);
+    audioRef.current.currentTime = newTime;
+  };
+
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    } else {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging]);
 
   const fetchTrending = async () => {
     setIsLoading(true);
@@ -125,6 +149,12 @@ const MusicApp = () => {
       localStorage.setItem('beatstream_history', JSON.stringify(updatedHistory));
       if (queryOverride) setSearchQuery(queryOverride);
     } catch (err) {} finally { setIsLoading(false); }
+  };
+
+  const stopAndClosePlayer = () => {
+    audioRef.current.pause();
+    audioRef.current.src = "";
+    setPlayingTrack(null);
   };
 
   const currentList = view === 'library' ? favorites : tracks;
@@ -208,16 +238,6 @@ const MusicApp = () => {
             <h2 className="text-[44px] font-black capitalize italic tracking-tighter text-white">
               {view === 'discover' ? 'Discover' : 'My Library'}
             </h2>
-            
-            {view === 'library' && favorites.length > 0 && (
-              <button 
-                onClick={() => {setFavorites([]); localStorage.removeItem('beatstream_favs');}} 
-                className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:border-[#6366f1] hover:bg-[#6366f1]/10 transition-all group mt-2 ml-10 shadow-lg"
-              >
-                <X size={14} className="text-white group-hover:text-[#6366f1] group-hover:rotate-90 transition-all" strokeWidth={3} />
-                <span className="text-[11px] font-black uppercase tracking-widest text-white group-hover:text-[#6366f1]">Clear All</span>
-              </button>
-            )}
           </div>
 
           {!isLoading && currentList.length === 0 ? (
@@ -234,7 +254,7 @@ const MusicApp = () => {
                 <div key={track.id} className="bg-[#111111]/40 p-4 rounded-[2rem] border border-white/5 relative group">
                   <div className="relative mb-4 aspect-square rounded-[1.5rem] overflow-hidden shadow-2xl">
                     <img src={track.album?.cover_medium} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="" />
-                    <button onClick={() => {if (playingTrack?.id === track.id) {isPaused ? audioRef.current.play() : audioRef.current.pause();} else {audioRef.current.src = track.preview; setPlayingTrack(track); audioRef.current.play();}}} className="absolute inset-0 m-auto w-12 h-12 bg-[#6366f1] rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-xl">
+                    <button onClick={() => {if (playingTrack?.id === track.id) {isPaused ? audioRef.current.play() : audioRef.current.pause();} else {audioRef.current.src = track.preview; audioRef.current.playbackRate = playbackRate; setPlayingTrack(track); audioRef.current.play();}}} className="absolute inset-0 m-auto w-12 h-12 bg-[#6366f1] rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-xl">
                       {playingTrack?.id === track.id && !isPaused ? <Pause size={20} fill="white" /> : <Play size={20} fill="white" className="ml-1" />}
                     </button>
                   </div>
@@ -255,7 +275,17 @@ const MusicApp = () => {
                         </div>
                         <div className="grid grid-cols-3 gap-1 px-1">
                           {[0.5, 1, 1.5].map(s => (
-                            <button key={s} onClick={() => {setPlaybackRate(s); audioRef.current.playbackRate = s; setActiveMenu(null);}} className={`py-1 rounded-lg text-[10px] font-bold transition-all ${playbackRate === s ? 'bg-[#6366f1] text-white' : 'bg-white/5 text-zinc-500 hover:bg-white/10'}`}>{s}x</button>
+                            <button 
+                              key={s} 
+                              onClick={() => {
+                                setPlaybackRate(s); 
+                                audioRef.current.playbackRate = s; 
+                                setActiveMenu(null);
+                              }} 
+                              className={`py-1 rounded-lg text-[10px] font-bold transition-all ${playbackRate === s ? 'bg-[#6366f1] text-white' : 'bg-white/5 text-zinc-500 hover:bg-white/10'}`}
+                            >
+                              {s}x
+                            </button>
                           ))}
                         </div>
                       </div>
@@ -294,11 +324,11 @@ const MusicApp = () => {
                 <span className="text-[10px] font-bold text-zinc-500 w-10 text-right tabular-nums">{formatTime(currentTime)}</span>
                 <div 
                   ref={progressBarRef}
-                  onClick={handleSeek}
+                  onMouseDown={handleMouseDown}
                   className="flex-1 h-1.5 bg-white/10 rounded-full relative overflow-hidden cursor-pointer group/bar"
                 >
                   <div 
-                    className="h-full bg-[#6366f1] shadow-[0_0_8px_#6366f1]" 
+                    className="h-full bg-[#6366f1] shadow-[0_0_8px_#6366f1] pointer-events-none" 
                     style={{ width: `${(currentTime / duration) * 100}%` }}
                   ></div>
                 </div>
@@ -306,7 +336,7 @@ const MusicApp = () => {
               </div>
             </div>
             <div className="w-[30%] flex justify-end pr-2">
-              <button onClick={() => setPlayingTrack(null)} className="text-white hover:text-[#6366f1] transition-colors bg-white/5 p-2.5 rounded-full hover:bg-white/10">
+              <button onClick={stopAndClosePlayer} className="text-white hover:text-[#6366f1] transition-colors bg-white/5 p-2.5 rounded-full hover:bg-white/10">
                 <X size={18} strokeWidth={3} />
               </button>
             </div>
