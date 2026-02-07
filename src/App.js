@@ -159,7 +159,6 @@ const MusicApp = () => {
 
   return (
     <div className="flex min-h-screen bg-[#020205] text-white font-sans select-none" onClick={() => setActiveMenu(null)}>
-      
       <aside className="w-64 bg-black flex flex-col p-6 border-r border-white/5 shrink-0 h-screen sticky top-0">
         <div className="flex items-center gap-2 mb-10 cursor-pointer" onClick={() => setView('discover')}>
           <Music size={24} className="text-[#6366f1]" />
@@ -193,7 +192,6 @@ const MusicApp = () => {
                 </button>
               )}
             </div>
-
             {showHistory && searchHistory.length > 0 && (
               <div className="absolute top-[115%] left-0 w-full bg-[#0a0a0a] border border-white/10 rounded-2xl p-1 shadow-2xl z-[150] backdrop-blur-xl">
                 {searchHistory.filter(item => item.toLowerCase().startsWith(searchQuery.toLowerCase())).map((h, i) => (
@@ -218,7 +216,6 @@ const MusicApp = () => {
               </div>
             )}
           </div>
-          
           <div className="flex items-center gap-8 pr-12">
             <button className="text-[15px] font-bold text-white hover:text-[#6366f1] transition-colors">Log In</button>
             <button className="text-[15px] font-bold text-white hover:text-[#6366f1] transition-colors">Install</button>
@@ -262,7 +259,6 @@ const MusicApp = () => {
                     <button onClick={(e) => {e.stopPropagation(); setActiveMenu(activeMenu === track.id ? null : track.id);}} className="text-zinc-600 hover:text-white transition-colors">
                       <MoreVertical size={16} />
                     </button>
-
                     <button onClick={(e) => {
                       e.stopPropagation();
                       const isLiked = favorites.some(f => f.id === track.id);
@@ -281,10 +277,10 @@ const MusicApp = () => {
                         </button>
                         <div className="h-[1px] bg-white/5 my-1" />
                         
-                        {/* Διορθωμένο Header για το Speed */}
-                        <div className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-zinc-400 flex items-center gap-2">
-                          <Zap size={13} className="text-[#6366f1] fill-[#6366f1]/20 shrink-0" /> 
-                          <span className="mt-[0.5px]">Speed</span>
+                        {/* ΔΙΟΡΘΩΜΕΝΟ SPEED HEADER ΜΕ ΤΕΛΕΙΑ ΕΥΘΥΓΡΑΜΜΙΣΗ */}
+                        <div className="px-3 pt-1.5 pb-1 text-[10px] font-black uppercase tracking-widest text-zinc-400 flex items-center gap-2">
+                          <Zap size={12} className="text-[#6366f1] fill-[#6366f1]/20 shrink-0" /> 
+                          <span className="translate-y-[1px]">Speed</span>
                         </div>
 
                         <div className="grid grid-cols-3 gap-1 px-1">
