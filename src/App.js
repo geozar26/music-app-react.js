@@ -8,6 +8,7 @@ import axios from 'axios';
 
 const MusicApp = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [suggestions, setSuggestions] = useState([]); // Νέο state για suggestions
   const [tracks, setTracks] = useState([]);
   const [view, setView] = useState('discover'); 
   const [playingTrack, setPlayingTrack] = useState(null);
@@ -25,6 +26,42 @@ const MusicApp = () => {
   const audioRef = useRef(new Audio());
   const searchRef = useRef(null);
   const progressBarRef = useRef(null);
+
+  // API Configuration
+  const API_CONFIG = {
+    headers: {
+      'x-rapidapi-key': '84e121a50dmsh4650b0d1f6e44fep1ebe78jsn56932706b2b1',
+      'x-rapidapi-host': 'deezerdevs-deezer.p.rapidapi.com'
+    }
+  };
+
+  // Logic για τα Suggestions (Amazon Music Style)
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(async () => {
+      if (searchQuery.length > 1) {
+        try {
+          const res = await axios.get(`https://deezerdevs-deezer.p.rapidapi.com/search?q=${searchQuery}`, API_CONFIG);
+          setSuggestions(res.data.data.slice(0, 6) || []);
+        } catch (err) { console.error(err); }
+      } else {
+        setSuggestions([]);
+      }
+    }, 300); // Περιμένει 300ms για να μην κάνει spam το API
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
+
+  // Κλείσιμο suggestions αν πατήσουμε έξω
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setSuggestions([]);
+        setShowHistory(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const formatTime = (time) => {
     if (isNaN(time)) return "0:00";
@@ -85,29 +122,10 @@ const MusicApp = () => {
     audioRef.current.currentTime = newTime;
   };
 
-  useEffect(() => {
-    if (isDragging) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-    } else {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    }
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isDragging]);
-
   const fetchTrending = async () => {
     setIsLoading(true);
     try {
-      const res = await axios.get(`https://deezerdevs-deezer.p.rapidapi.com/search?q=trending`, {
-        headers: {
-          'x-rapidapi-key': '84e121a50dmsh4650b0d1f6e44fep1ebe78jsn56932706b2b1',
-          'x-rapidapi-host': 'deezerdevs-deezer.p.rapidapi.com'
-        }
-      });
+      const res = await axios.get(`https://deezerdevs-deezer.p.rapidapi.com/search?q=trending`, API_CONFIG);
       setTracks(res.data.data || []);
     } catch (err) { console.error(err); } finally { setIsLoading(false); }
   };
@@ -118,13 +136,9 @@ const MusicApp = () => {
     if (!q.trim()) return;
     setIsLoading(true);
     setShowHistory(false);
+    setSuggestions([]);
     try {
-      const res = await axios.get(`https://deezerdevs-deezer.p.rapidapi.com/search?q=${q}`, {
-        headers: {
-          'x-rapidapi-key': '84e121a50dmsh4650b0d1f6e44fep1ebe78jsn56932706b2b1',
-          'x-rapidapi-host': 'deezerdevs-deezer.p.rapidapi.com'
-        }
-      });
+      const res = await axios.get(`https://deezerdevs-deezer.p.rapidapi.com/search?q=${q}`, API_CONFIG);
       setTracks(res.data.data || []);
       setView('discover');
       const updatedHistory = [q, ...searchHistory.filter(h => h !== q)].slice(0, 15);
@@ -168,28 +182,69 @@ const MusicApp = () => {
 
       <main className="flex-1 flex flex-col relative pb-40">
         <header className="p-4 flex items-center justify-between z-[100] bg-[#020205]/80 backdrop-blur-md sticky top-0">
-          <div className="w-[450px] relative" ref={searchRef}>
-            <div className="relative">
+          <div className="w-[500px] relative" ref={searchRef}>
+            <div className="relative z-10">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
               <input 
                 type="text" 
                 className="w-full bg-[#111111] rounded-xl py-2.5 px-10 outline-none text-white border border-white/5 focus:border-[#6366f1]/40 transition-all"
-                placeholder="Search..." 
+                placeholder="Search songs, artists..." 
                 value={searchQuery}
                 onFocus={() => setShowHistory(true)}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               />
               {searchQuery && (
-                <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-white hover:text-[#6366f1] transition-colors">
+                <button onClick={() => {setSearchQuery(''); setSuggestions([]);}} className="absolute right-3 top-1/2 -translate-y-1/2 text-white hover:text-[#6366f1] transition-colors">
                   <X size={16} strokeWidth={3} />
                 </button>
               )}
             </div>
+
+            {/* ANIMATED SUGGESTIONS BOX (AMAZON STYLE) */}
+            {(suggestions.length > 0 || (showHistory && searchHistory.length > 0)) && (
+              <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-black/95 backdrop-blur-3xl border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 z-[150]">
+                <div className="p-2">
+                  {suggestions.length > 0 ? (
+                    suggestions.map((track) => (
+                      <div 
+                        key={track.id} 
+                        onClick={() => handleSearch(null, track.title)}
+                        className="flex items-center justify-between p-3 hover:bg-white/5 rounded-xl cursor-pointer transition-all group"
+                      >
+                        {/* Αριστερά: Το κείμενο του query */}
+                        <div className="flex items-center gap-3 flex-1">
+                          <Search size={14} className="text-zinc-500 group-hover:text-[#6366f1]" />
+                          <span className="text-sm font-bold text-zinc-300 group-hover:text-white truncate max-w-[150px]">
+                            {searchQuery.toLowerCase()}
+                          </span>
+                        </div>
+                        
+                        {/* Δεξιά: Εικόνα και Πληροφορίες */}
+                        <div className="flex items-center gap-3 pl-4 border-l border-white/5">
+                          <img src={track.album.cover_small} className="w-10 h-10 rounded-lg object-cover shadow-lg" alt="" />
+                          <div className="flex flex-col">
+                            <span className="text-[12px] font-black text-white truncate w-32 tracking-tight leading-none mb-1">{track.title}</span>
+                            <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">{track.artist.name}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    searchHistory.slice(0, 5).map((h, i) => (
+                      <div key={i} onClick={() => handleSearch(null, h)} className="flex items-center gap-3 p-3 hover:bg-white/5 rounded-xl cursor-pointer transition-all">
+                        <History size={14} className="text-zinc-500" />
+                        <span className="text-sm font-bold text-zinc-300">{h}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
           </div>
+
           <div className="flex items-center gap-8 pr-12">
             <button className="text-[15px] font-bold text-white hover:text-[#6366f1] transition-colors">Log In</button>
-            <button className="text-[15px] font-bold text-white hover:text-[#6366f1] transition-colors">Install</button>
             <button className="bg-white text-black text-[14px] font-black px-6 py-2 rounded-full hover:bg-transparent hover:border-[#6366f1] hover:text-[#6366f1] border border-transparent transition-all">Sign Up</button>
           </div>
         </header>
@@ -253,7 +308,6 @@ const MusicApp = () => {
                     <Music3 size={64} className="opacity-20 text-[#6366f1]" />
                   </div>
                   <h3 className="text-xl font-bold text-white mb-2">No tracks found</h3>
-                  <p className="text-sm font-medium">Your collection is empty!</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
@@ -339,6 +393,17 @@ const MusicApp = () => {
           </div>
         )}
       </main>
+
+      {/* TA CSS ΓΙΑ ΤΟ ΑΝΙΜΑΤΙΟΝ */}
+      <style>{`
+        @keyframes fadeInSlide {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-in {
+          animation: fadeInSlide 0.2s ease-out forwards;
+        }
+      `}</style>
     </div>
   );
 };
