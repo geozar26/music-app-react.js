@@ -32,7 +32,7 @@ const MusicApp = () => {
     }
   };
 
-  // --- PLAYER LOGIC ---
+  // --- PLAYER & SCRUBBING ---
   const handleMouseDown = (e) => {
     setIsDragging(true);
     handleScrub(e);
@@ -60,7 +60,7 @@ const MusicApp = () => {
     }
   }, [isDragging]);
 
-  // --- SEARCH & SUGGESTIONS ---
+  // --- SUGGESTIONS (Start from 1st char) ---
   useEffect(() => {
     const fetchSuggestions = async () => {
       if (searchQuery.trim().length > 0) {
@@ -124,11 +124,6 @@ const MusicApp = () => {
     localStorage.setItem('beatstream_favs', JSON.stringify(newF));
   };
 
-  const clearHistory = () => {
-    setSearchHistory([]);
-    localStorage.removeItem('beatstream_history');
-  };
-
   const clearLibrary = () => {
     setFavorites([]);
     localStorage.removeItem('beatstream_favs');
@@ -142,13 +137,13 @@ const MusicApp = () => {
       <aside className="w-64 bg-black flex flex-col p-6 border-r border-white/5 shrink-0 h-screen sticky top-0">
         <div className="flex items-center gap-2 mb-10 cursor-pointer" onClick={() => setView('discover')}>
           <Music size={24} className="text-[#6366f1]" />
-          <span className="font-black text-xl italic tracking-tighter">Beatstream</span>
+          <span className="font-black text-xl italic tracking-tighter uppercase">Beatstream</span>
         </div>
         <nav className="flex flex-col gap-4">
-          <button onClick={() => setView('library')} className={`flex items-center gap-3 ${view === 'library' ? 'text-white' : 'text-zinc-500'}`}>
+          <button onClick={() => setView('library')} className={`flex items-center gap-3 transition-colors ${view === 'library' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}>
             <LibraryIcon size={16} /> <span className="font-bold text-[13px] tracking-widest uppercase">Library</span>
           </button>
-          <button onClick={() => setView('history')} className={`flex items-center gap-3 ${view === 'history' ? 'text-white' : 'text-zinc-500'}`}>
+          <button onClick={() => setView('history')} className={`flex items-center gap-3 transition-colors ${view === 'history' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}>
             <History size={16} /> <span className="font-bold text-[13px] tracking-widest uppercase">History</span>
           </button>
         </nav>
@@ -161,7 +156,7 @@ const MusicApp = () => {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
               <input 
                 type="text" 
-                className="w-full bg-[#111111] rounded-xl py-2.5 px-10 outline-none text-white border border-white/5 focus:border-[#6366f1]/40 transition-all"
+                className="w-full bg-[#111111] rounded-xl py-2.5 px-10 outline-none text-white border border-white/5 focus:border-[#6366f1]/40 transition-all shadow-xl"
                 placeholder="Search..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -169,6 +164,7 @@ const MusicApp = () => {
               />
             </div>
 
+            {/* AMAZON STYLE SUGGESTIONS */}
             {suggestions.length > 0 && (
               <div className="absolute top-[calc(100%+10px)] left-0 w-full bg-[#0a0a0a] border border-white/10 rounded-2xl shadow-2xl z-[300] animate-search-in p-2">
                 {suggestions.map((track) => (
@@ -180,35 +176,41 @@ const MusicApp = () => {
                         <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{track.artist.name}</span>
                       </div>
                     </div>
-                    <div className="pr-4 italic text-zinc-500 text-sm">{searchQuery.toLowerCase()}...</div>
+                    <div className="pr-4 italic text-zinc-500 text-sm group-hover:text-[#6366f1] transition-colors">
+                      {searchQuery.toLowerCase()}...
+                    </div>
                   </div>
                 ))}
               </div>
             )}
           </div>
+          
           <div className="flex gap-4 pr-8">
-            <button className="text-sm font-bold">Log In</button>
-            <button className="bg-white text-black px-6 py-2 rounded-full font-black text-sm">Sign Up</button>
+            <button className="text-sm font-bold hover:text-[#6366f1] transition-colors">Log In</button>
+            <button className="bg-white text-black px-6 py-2 rounded-full font-black text-sm hover:bg-[#6366f1] hover:text-white transition-all">Sign Up</button>
           </div>
         </header>
 
         <div className="p-8">
            <div className="flex items-center gap-6 mb-10">
              {view !== 'discover' && (
-               <button onClick={() => setView('discover')} className="p-2 bg-white/5 rounded-full hover:bg-white/10 text-white">
+               <button 
+                onClick={() => setView('discover')} 
+                className="p-2 bg-white/5 rounded-full text-zinc-400 hover:text-[#6366f1] hover:bg-white/10 transition-all"
+               >
                  <ChevronLeft size={28} strokeWidth={3} />
                </button>
              )}
              <h2 className="text-[44px] font-black italic tracking-tighter capitalize">
                {view === 'discover' ? 'Discover' : view === 'library' ? 'My Library' : 'History'}
              </h2>
+             
+             {/* ΜΟΒ CLEAR ALL ΜΟΝΟ ΣΤΟ LIBRARY */}
              {view === 'library' && favorites.length > 0 && (
-                <button onClick={clearLibrary} className="flex items-center gap-2 px-4 py-1.5 bg-red-500/10 text-red-500 rounded-full border border-red-500/20 text-[10px] font-black uppercase mt-2">
-                  <Trash2 size={14} /> CLEAR ALL
-                </button>
-             )}
-             {view === 'history' && searchHistory.length > 0 && (
-                <button onClick={clearHistory} className="flex items-center gap-2 px-4 py-1.5 bg-red-500/10 text-red-500 rounded-full border border-red-500/20 text-[10px] font-black uppercase mt-2">
+                <button 
+                  onClick={clearLibrary} 
+                  className="flex items-center gap-2 px-4 py-1.5 bg-[#6366f1]/10 text-[#6366f1] rounded-full border border-[#6366f1]/20 text-[10px] font-black uppercase mt-2 hover:bg-[#6366f1]/20 transition-all"
+                >
                   <Trash2 size={14} /> CLEAR ALL
                 </button>
              )}
@@ -221,7 +223,7 @@ const MusicApp = () => {
                     <div className="flex items-center gap-4 text-zinc-400 group-hover:text-white">
                       <History size={18} /> <span className="font-bold">{h}</span>
                     </div>
-                    <X size={18} className="text-zinc-600 hover:text-white" onClick={(e) => { e.stopPropagation(); const newH = searchHistory.filter(x => x !== h); setSearchHistory(newH); localStorage.setItem('beatstream_history', JSON.stringify(newH)); }} />
+                    <X size={18} className="text-zinc-600 hover:text-red-500 transition-colors" onClick={(e) => { e.stopPropagation(); const newH = searchHistory.filter(x => x !== h); setSearchHistory(newH); localStorage.setItem('beatstream_history', JSON.stringify(newH)); }} />
                   </div>
                 ))}
               </div>
@@ -253,7 +255,7 @@ const MusicApp = () => {
                     <Heart 
                       size={18} 
                       onClick={() => toggleFavorite(track)}
-                      className={`cursor-pointer transition-all ${favorites.some(f => f.id === track.id) ? "text-red-500 fill-red-500" : "text-zinc-600 hover:text-white"}`} 
+                      className={`cursor-pointer transition-all ${favorites.some(f => f.id === track.id) ? "text-[#6366f1] fill-[#6366f1]" : "text-zinc-600 hover:text-white"}`} 
                     />
                   </div>
                 </div>
@@ -262,29 +264,30 @@ const MusicApp = () => {
            )}
         </div>
 
+        {/* Player Bar */}
         {playingTrack && (
           <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-[850px] bg-black/90 backdrop-blur-2xl border border-white/10 p-4 rounded-[2.5rem] flex items-center justify-between z-[500] shadow-2xl">
             <div className="flex items-center gap-4 w-[30%]">
               <img src={playingTrack.album?.cover_small} className="w-12 h-12 rounded-xl" alt="" />
               <div className="truncate text-left text-white">
                 <h4 className="text-[12px] font-bold truncate">{playingTrack.title}</h4>
-                <p className="text-[10px] text-zinc-400 font-bold uppercase">{playingTrack.artist?.name}</p>
+                <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-tighter">{playingTrack.artist?.name}</p>
               </div>
             </div>
             <div className="flex-1 flex flex-col items-center gap-2">
               <button onClick={() => { isPaused ? audioRef.current.play() : audioRef.current.pause(); setIsPaused(!isPaused); }} className="bg-white p-2 rounded-full hover:scale-110 transition-all">
                 {isPaused ? <Play size={20} fill="black" /> : <Pause size={20} fill="black" />}
               </button>
-              <div className="w-full flex items-center gap-3">
-                <span className="text-[10px] text-zinc-500 tabular-nums">{Math.floor(currentTime)}s</span>
-                <div ref={progressBarRef} onMouseDown={handleMouseDown} className="flex-1 h-1.5 bg-white/10 rounded-full cursor-pointer relative overflow-hidden">
+              <div className="w-full flex items-center gap-3 px-4">
+                <span className="text-[10px] text-zinc-500 w-10 text-right">{Math.floor(currentTime)}s</span>
+                <div ref={progressBarRef} onMouseDown={handleMouseDown} className="flex-1 h-1 bg-white/10 rounded-full cursor-pointer relative overflow-hidden">
                   <div className="h-full bg-[#6366f1]" style={{ width: `${(currentTime / duration) * 100}%` }}></div>
                 </div>
-                <span className="text-[10px] text-zinc-500 tabular-nums">{Math.floor(duration)}s</span>
+                <span className="text-[10px] text-zinc-500 w-10">{Math.floor(duration)}s</span>
               </div>
             </div>
             <div className="w-[30%] flex justify-end">
-              <button onClick={() => setPlayingTrack(null)} className="p-2 bg-white/5 rounded-full hover:text-red-500 transition-colors"><X size={18} /></button>
+              <button onClick={() => setPlayingTrack(null)} className="p-2 bg-white/5 rounded-full hover:text-[#6366f1] transition-colors"><X size={18} /></button>
             </div>
           </div>
         )}
@@ -292,7 +295,7 @@ const MusicApp = () => {
 
       <style>{`
         @keyframes searchFadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-search-in { animation: searchFadeIn 0.2s ease-out forwards; }
+        .animate-search-in { animation: searchFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
       `}</style>
     </div>
   );
