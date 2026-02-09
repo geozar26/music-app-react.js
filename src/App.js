@@ -142,7 +142,7 @@ const MusicApp = () => {
       });
       setTracks(res.data.data || []);
       setView('discover');
-      const updatedHistory = [q, ...searchHistory.filter(h => h !== q)].slice(0, 8);
+      const updatedHistory = [q, ...searchHistory.filter(h => h !== q)].slice(0, 15);
       setSearchHistory(updatedHistory);
       localStorage.setItem('beatstream_history', JSON.stringify(updatedHistory));
       if (queryOverride) setSearchQuery(queryOverride);
@@ -164,10 +164,15 @@ const MusicApp = () => {
           <Music size={24} className="text-[#6366f1]" />
           <span className="font-black text-xl capitalize italic tracking-tighter text-white">Beatstream</span>
         </div>
-        <nav>
+        <nav className="flex flex-col gap-4">
           <button onClick={() => setView('library')} className={`flex items-center gap-3 transition-colors ${view === 'library' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}>
             <LibraryIcon size={16} />
             <span className="font-bold capitalize text-[13px] tracking-widest">Library</span>
+          </button>
+          {/* HISTORY OPTION UNDER LIBRARY */}
+          <button onClick={() => setView('history')} className={`flex items-center gap-3 transition-colors ${view === 'history' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}>
+            <History size={16} />
+            <span className="font-bold capitalize text-[13px] tracking-widest">History</span>
           </button>
         </nav>
       </aside>
@@ -192,29 +197,6 @@ const MusicApp = () => {
                 </button>
               )}
             </div>
-            {showHistory && searchHistory.length > 0 && (
-              <div className="absolute top-[115%] left-0 w-full bg-[#0a0a0a] border border-white/10 rounded-2xl p-1 shadow-2xl z-[150] backdrop-blur-xl">
-                {searchHistory.filter(item => item.toLowerCase().startsWith(searchQuery.toLowerCase())).map((h, i) => (
-                  <div key={i} className="flex items-center justify-between group hover:bg-white/5 rounded-xl transition-all cursor-pointer">
-                    <div onClick={() => handleSearch(null, h)} className="flex-1 flex items-center gap-3 px-3 py-2.5">
-                      <History size={14} className="text-zinc-600 group-hover:text-[#6366f1]" />
-                      <span className="text-sm font-medium text-zinc-300 group-hover:text-white">{h}</span>
-                    </div>
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const newHist = searchHistory.filter(item => item !== h);
-                        setSearchHistory(newHist);
-                        localStorage.setItem('beatstream_history', JSON.stringify(newHist));
-                      }}
-                      className="mr-2 p-1.5 text-white hover:text-[#6366f1] transition-all"
-                    >
-                      <X size={14} strokeWidth={3} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
           <div className="flex items-center gap-8 pr-12">
             <button className="text-[15px] font-bold text-white hover:text-[#6366f1] transition-colors">Log In</button>
@@ -225,85 +207,113 @@ const MusicApp = () => {
 
         <div className="p-8">
           <div className="flex items-center gap-6 mb-10">
-            {view === 'library' && (
+            {view !== 'discover' && (
               <button onClick={() => setView('discover')} className="p-2 bg-white/5 rounded-full hover:bg-white/10 text-white hover:text-[#6366f1] transition-all">
                 <ChevronLeft size={28} strokeWidth={3} />
               </button>
             )}
             <h2 className="text-[44px] font-black capitalize italic tracking-tighter text-white">
-              {view === 'discover' ? 'Discover' : 'My Library'}
+              {view === 'discover' ? 'Discover' : view === 'library' ? 'My Library' : 'History'}
             </h2>
           </div>
 
-          {!isLoading && currentList.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-24 text-zinc-600">
-              <div className="bg-white/5 p-8 rounded-[3rem] mb-6">
-                <Music3 size={64} className="opacity-20 text-[#6366f1]" />
-              </div>
-              <h3 className="text-xl font-bold text-white mb-2">No tracks found</h3>
-              <p className="text-sm font-medium">Your collection is empty. Start adding some music!</p>
+          {/* HISTORY VIEW CONTENT */}
+          {view === 'history' ? (
+            <div className="flex flex-col gap-2 max-w-2xl">
+              {searchHistory.length === 0 ? (
+                <p className="text-zinc-500 font-medium">No recent searches.</p>
+              ) : (
+                searchHistory.map((h, i) => (
+                  <div key={i} onClick={() => handleSearch(null, h)} className="flex items-center justify-between group bg-[#111111]/40 hover:bg-white/5 p-4 rounded-2xl border border-white/5 transition-all cursor-pointer">
+                    <div className="flex items-center gap-4">
+                      <History size={18} className="text-zinc-600 group-hover:text-[#6366f1]" />
+                      <span className="text-lg font-bold text-zinc-300 group-hover:text-white">{h}</span>
+                    </div>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const newHist = searchHistory.filter(item => item !== h);
+                        setSearchHistory(newHist);
+                        localStorage.setItem('beatstream_history', JSON.stringify(newHist));
+                      }}
+                      className="p-2 text-zinc-500 hover:text-white transition-all"
+                    >
+                      <X size={18} strokeWidth={3} />
+                    </button>
+                  </div>
+                ))
+              )}
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
-              {currentList.map(track => (
-                <div key={track.id} className="bg-[#111111]/40 p-4 rounded-[2rem] border border-white/5 relative group">
-                  <div className="relative mb-4 aspect-square rounded-[1.5rem] overflow-hidden shadow-2xl">
-                    <img src={track.album?.cover_medium} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="" />
-                    <button onClick={() => {if (playingTrack?.id === track.id) {isPaused ? audioRef.current.play() : audioRef.current.pause();} else {audioRef.current.src = track.preview; audioRef.current.playbackRate = playbackRate; setPlayingTrack(track); audioRef.current.play();}}} className="absolute inset-0 m-auto w-12 h-12 bg-[#6366f1] rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-xl">
-                      {playingTrack?.id === track.id && !isPaused ? <Pause size={20} fill="white" /> : <Play size={20} fill="white" className="ml-1" />}
-                    </button>
+            <>
+              {!isLoading && currentList.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-24 text-zinc-600">
+                  <div className="bg-white/5 p-8 rounded-[3rem] mb-6">
+                    <Music3 size={64} className="opacity-20 text-[#6366f1]" />
                   </div>
-                  <h3 className="font-bold truncate text-xs mb-1 text-white">{track.title}</h3>
-                  <p className="text-[10px] text-zinc-500 truncate mb-4 uppercase font-bold tracking-wider">{track.artist?.name}</p>
-                  <div className="flex justify-between items-center relative">
-                    <button onClick={(e) => {e.stopPropagation(); setActiveMenu(activeMenu === track.id ? null : track.id);}} className="text-zinc-600 hover:text-white transition-colors">
-                      <MoreVertical size={16} />
-                    </button>
-                    <button onClick={(e) => {
-                      e.stopPropagation();
-                      const isLiked = favorites.some(f => f.id === track.id);
-                      const newF = isLiked ? favorites.filter(f => f.id !== track.id) : [track, ...favorites];
-                      setFavorites(newF);
-                      localStorage.setItem('beatstream_favs', JSON.stringify(newF));
-                    }}>
-                      <Heart size={18} className={favorites.some(f => f.id === track.id) ? "text-red-500 fill-red-500 scale-110" : "text-zinc-800 hover:text-zinc-400"} />
-                    </button>
-
-                    {activeMenu === track.id && (
-                      <div className="absolute bottom-8 left-0 w-40 bg-[#0a0a0a] border border-white/10 rounded-2xl p-2 shadow-2xl z-[160] backdrop-blur-xl">
-                        <button className="w-full flex items-center gap-3 px-3 py-2 hover:bg-white/5 rounded-xl transition-all group">
-                          <Download size={14} className="text-zinc-500 group-hover:text-[#6366f1]" />
-                          <span className="text-xs font-bold text-zinc-400 group-hover:text-white">Download</span>
-                        </button>
-                        <div className="h-[1px] bg-white/5 my-1" />
-                        
-                        {/* ΔΙΟΡΘΩΜΕΝΟ SPEED HEADER ΜΕ ΤΕΛΕΙΑ ΕΥΘΥΓΡΑΜΜΙΣΗ */}
-                        <div className="px-3 pt-1.5 pb-1 text-[10px] font-black uppercase tracking-widest text-zinc-400 flex items-center gap-2">
-                          <Zap size={12} className="text-[#6366f1] fill-[#6366f1]/20 shrink-0" /> 
-                          <span className="translate-y-[1px]">Speed</span>
-                        </div>
-
-                        <div className="grid grid-cols-3 gap-1 px-1">
-                          {[0.5, 1, 1.5].map(s => (
-                            <button 
-                              key={s} 
-                              onClick={() => {
-                                setPlaybackRate(s); 
-                                audioRef.current.playbackRate = s; 
-                                setActiveMenu(null);
-                              }} 
-                              className={`py-1 rounded-lg text-[10px] font-bold transition-all ${playbackRate === s ? 'bg-[#6366f1] text-white' : 'bg-white/5 text-zinc-500 hover:bg-white/10'}`}
-                            >
-                              {s}x
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2">No tracks found</h3>
+                  <p className="text-sm font-medium">Your collection is empty. Start adding some music!</p>
                 </div>
-              ))}
-            </div>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
+                  {currentList.map(track => (
+                    <div key={track.id} className="bg-[#111111]/40 p-4 rounded-[2rem] border border-white/5 relative group">
+                      <div className="relative mb-4 aspect-square rounded-[1.5rem] overflow-hidden shadow-2xl">
+                        <img src={track.album?.cover_medium} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="" />
+                        <button onClick={() => {if (playingTrack?.id === track.id) {isPaused ? audioRef.current.play() : audioRef.current.pause();} else {audioRef.current.src = track.preview; audioRef.current.playbackRate = playbackRate; setPlayingTrack(track); audioRef.current.play();}}} className="absolute inset-0 m-auto w-12 h-12 bg-[#6366f1] rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-xl">
+                          {playingTrack?.id === track.id && !isPaused ? <Pause size={20} fill="white" /> : <Play size={20} fill="white" className="ml-1" />}
+                        </button>
+                      </div>
+                      <h3 className="font-bold truncate text-xs mb-1 text-white">{track.title}</h3>
+                      <p className="text-[10px] text-zinc-500 truncate mb-4 uppercase font-bold tracking-wider">{track.artist?.name}</p>
+                      <div className="flex justify-between items-center relative">
+                        <button onClick={(e) => {e.stopPropagation(); setActiveMenu(activeMenu === track.id ? null : track.id);}} className="text-zinc-600 hover:text-white transition-colors">
+                          <MoreVertical size={16} />
+                        </button>
+                        <button onClick={(e) => {
+                          e.stopPropagation();
+                          const isLiked = favorites.some(f => f.id === track.id);
+                          const newF = isLiked ? favorites.filter(f => f.id !== track.id) : [track, ...favorites];
+                          setFavorites(newF);
+                          localStorage.setItem('beatstream_favs', JSON.stringify(newF));
+                        }}>
+                          <Heart size={18} className={favorites.some(f => f.id === track.id) ? "text-red-500 fill-red-500 scale-110" : "text-zinc-800 hover:text-zinc-400"} />
+                        </button>
+
+                        {activeMenu === track.id && (
+                          <div className="absolute bottom-8 left-0 w-40 bg-[#0a0a0a] border border-white/10 rounded-2xl p-2 shadow-2xl z-[160] backdrop-blur-xl">
+                            <button className="w-full flex items-center gap-3 px-3 py-2 hover:bg-white/5 rounded-xl transition-all group">
+                              <Download size={14} className="text-zinc-500 group-hover:text-[#6366f1]" />
+                              <span className="text-xs font-bold text-zinc-400 group-hover:text-white">Download</span>
+                            </button>
+                            <div className="h-[1px] bg-white/5 my-1" />
+                            <div className="px-3 pt-1.5 pb-1 text-[10px] font-black uppercase tracking-widest text-zinc-400 flex items-center gap-2">
+                              <Zap size={12} className="text-[#6366f1] fill-[#6366f1]/20 shrink-0" /> 
+                              <span className="translate-y-[1px]">Speed</span>
+                            </div>
+                            <div className="grid grid-cols-3 gap-1 px-1">
+                              {[0.5, 1, 1.5].map(s => (
+                                <button 
+                                  key={s} 
+                                  onClick={() => {
+                                    setPlaybackRate(s); 
+                                    audioRef.current.playbackRate = s; 
+                                    setActiveMenu(null);
+                                  }} 
+                                  className={`py-1 rounded-lg text-[10px] font-bold transition-all ${playbackRate === s ? 'bg-[#6366f1] text-white' : 'bg-white/5 text-zinc-500 hover:bg-white/10'}`}
+                                >
+                                  {s}x
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
 
