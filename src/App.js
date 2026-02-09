@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Search, Play, Heart, Music, Library as LibraryIcon, 
   MoreVertical, ChevronLeft, Pause, History, X, Download, Zap, 
-  Music2, Music3
+  Music2, Music3, Trash2
 } from 'lucide-react';
 import axios from 'axios';
 
@@ -149,6 +149,11 @@ const MusicApp = () => {
     } catch (err) {} finally { setIsLoading(false); }
   };
 
+  const clearAllHistory = () => {
+    setSearchHistory([]);
+    localStorage.removeItem('beatstream_history');
+  };
+
   const stopAndClosePlayer = () => {
     audioRef.current.pause();
     audioRef.current.src = "";
@@ -169,7 +174,6 @@ const MusicApp = () => {
             <LibraryIcon size={16} />
             <span className="font-bold capitalize text-[13px] tracking-widest">Library</span>
           </button>
-          {/* HISTORY OPTION UNDER LIBRARY */}
           <button onClick={() => setView('history')} className={`flex items-center gap-3 transition-colors ${view === 'history' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}>
             <History size={16} />
             <span className="font-bold capitalize text-[13px] tracking-widest">History</span>
@@ -206,22 +210,36 @@ const MusicApp = () => {
         </header>
 
         <div className="p-8">
-          <div className="flex items-center gap-6 mb-10">
-            {view !== 'discover' && (
-              <button onClick={() => setView('discover')} className="p-2 bg-white/5 rounded-full hover:bg-white/10 text-white hover:text-[#6366f1] transition-all">
-                <ChevronLeft size={28} strokeWidth={3} />
+          <div className="flex items-center justify-between mb-10">
+            <div className="flex items-center gap-6">
+              {view !== 'discover' && (
+                <button onClick={() => setView('discover')} className="p-2 bg-white/5 rounded-full hover:bg-white/10 text-white hover:text-[#6366f1] transition-all">
+                  <ChevronLeft size={28} strokeWidth={3} />
+                </button>
+              )}
+              <h2 className="text-[44px] font-black capitalize italic tracking-tighter text-white">
+                {view === 'discover' ? 'Discover' : view === 'library' ? 'My Library' : 'History'}
+              </h2>
+            </div>
+            
+            {/* CLEAR ALL BUTTON ΜΟΝΟ ΣΤΟ HISTORY VIEW */}
+            {view === 'history' && searchHistory.length > 0 && (
+              <button 
+                onClick={clearAllHistory}
+                className="flex items-center gap-2 px-5 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-full transition-all border border-red-500/20 group"
+              >
+                <Trash2 size={16} className="group-hover:scale-110 transition-transform" />
+                <span className="text-xs font-black uppercase tracking-widest">Clear All</span>
               </button>
             )}
-            <h2 className="text-[44px] font-black capitalize italic tracking-tighter text-white">
-              {view === 'discover' ? 'Discover' : view === 'library' ? 'My Library' : 'History'}
-            </h2>
           </div>
 
-          {/* HISTORY VIEW CONTENT */}
           {view === 'history' ? (
             <div className="flex flex-col gap-2 max-w-2xl">
               {searchHistory.length === 0 ? (
-                <p className="text-zinc-500 font-medium">No recent searches.</p>
+                <div className="flex flex-col py-10 text-zinc-600">
+                   <p className="text-lg font-bold text-zinc-500">History is empty.</p>
+                </div>
               ) : (
                 searchHistory.map((h, i) => (
                   <div key={i} onClick={() => handleSearch(null, h)} className="flex items-center justify-between group bg-[#111111]/40 hover:bg-white/5 p-4 rounded-2xl border border-white/5 transition-all cursor-pointer">
