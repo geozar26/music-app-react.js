@@ -210,28 +210,30 @@ const MusicApp = () => {
         </header>
 
         <div className="p-8">
-          <div className="flex items-center justify-between mb-10">
+          <div className="flex items-center gap-6 mb-10">
+            {view !== 'discover' && (
+              <button onClick={() => setView('discover')} className="p-2 bg-white/5 rounded-full hover:bg-white/10 text-white hover:text-[#6366f1] transition-all">
+                <ChevronLeft size={28} strokeWidth={3} />
+              </button>
+            )}
+            
+            {/* WRAPPER ΓΙΑ ΤΙΤΛΟ ΚΑΙ CLEAR BUTTON ΔΙΠΛΑ ΔΙΠΛΑ */}
             <div className="flex items-center gap-6">
-              {view !== 'discover' && (
-                <button onClick={() => setView('discover')} className="p-2 bg-white/5 rounded-full hover:bg-white/10 text-white hover:text-[#6366f1] transition-all">
-                  <ChevronLeft size={28} strokeWidth={3} />
-                </button>
-              )}
               <h2 className="text-[44px] font-black capitalize italic tracking-tighter text-white">
                 {view === 'discover' ? 'Discover' : view === 'library' ? 'My Library' : 'History'}
               </h2>
+
+              {/* ΤΟ ΜΟΒ CLEAR BUTTON ΔΙΠΛΑ ΣΤΟΝ ΤΙΤΛΟ */}
+              {view === 'history' && searchHistory.length > 0 && (
+                <button 
+                  onClick={clearAllHistory}
+                  className="flex items-center gap-2 px-4 py-1.5 bg-[#6366f1]/10 hover:bg-[#6366f1]/20 text-[#6366f1] rounded-full transition-all border border-[#6366f1]/20 group mt-2"
+                >
+                  <Trash2 size={14} className="group-hover:scale-110 transition-transform" />
+                  <span className="text-[10px] font-black uppercase tracking-widest">Clear All</span>
+                </button>
+              )}
             </div>
-            
-            {/* CLEAR ALL BUTTON ΜΟΝΟ ΣΤΟ HISTORY VIEW */}
-            {view === 'history' && searchHistory.length > 0 && (
-              <button 
-                onClick={clearAllHistory}
-                className="flex items-center gap-2 px-5 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-full transition-all border border-red-500/20 group"
-              >
-                <Trash2 size={16} className="group-hover:scale-110 transition-transform" />
-                <span className="text-xs font-black uppercase tracking-widest">Clear All</span>
-              </button>
-            )}
           </div>
 
           {view === 'history' ? (
