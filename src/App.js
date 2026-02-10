@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Search, Play, Heart, Music, Library as LibraryIcon, 
@@ -126,6 +125,13 @@ const MusicApp = () => {
     } catch (err) { console.error(err); }
   };
 
+  const removeHistoryItem = (e, itemToRemove) => {
+    e.stopPropagation();
+    const updatedHistory = searchHistory.filter(h => h !== itemToRemove);
+    setSearchHistory(updatedHistory);
+    localStorage.setItem('beatstream_history', JSON.stringify(updatedHistory));
+  };
+
   const toggleFavorite = (track) => {
     const isLiked = favorites.some(f => f.id === track.id);
     const newF = isLiked ? favorites.filter(f => f.id !== track.id) : [track, ...favorites];
@@ -170,12 +176,20 @@ const MusicApp = () => {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
               <input 
                 type="text" 
-                className="w-full bg-[#111111] rounded-xl py-2.5 px-10 outline-none border border-white/5 focus:border-[#6366f1]/40 transition-all"
+                className="w-full bg-[#111111] rounded-xl py-2.5 px-10 outline-none border border-white/5 focus:border-[#6366f1]/40 transition-all pr-12"
                 placeholder="Search..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               />
+              {searchQuery && (
+                <button 
+                  onClick={() => { setSearchQuery(''); setSuggestions([]); }}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-[#6366f1] transition-colors"
+                >
+                  <X size={18} strokeWidth={2.5} />
+                </button>
+              )}
             </div>
             {suggestions.length > 0 && (
               <div className="absolute top-[calc(100%+10px)] left-0 w-full bg-[#0a0a0a] border border-white/10 rounded-2xl shadow-2xl z-[300] p-2">
@@ -188,7 +202,7 @@ const MusicApp = () => {
                         <span className="text-[10px] font-bold text-zinc-500 uppercase">{track.artist.name}</span>
                       </div>
                     </div>
-                    <div className="pr-4 italic text-zinc-500 text-sm group-hover:text-[#6366f1]">{searchQuery.toLowerCase()}...</div>
+                    {/* Αφαιρέθηκε το κείμενο με τις τελείες εδώ */}
                   </div>
                 ))}
               </div>
@@ -230,6 +244,12 @@ const MusicApp = () => {
                      <div className="flex items-center gap-4 text-zinc-400 group-hover:text-white">
                        <History size={18} /> <span className="font-bold">{h}</span>
                      </div>
+                     <button 
+                        onClick={(e) => removeHistoryItem(e, h)}
+                        className="text-white hover:text-[#6366f1] transition-colors p-1"
+                     >
+                        <X size={18} strokeWidth={2.5} />
+                     </button>
                    </div>
                  ))}
                </div>
