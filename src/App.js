@@ -95,13 +95,42 @@ const MusicApp = () => {
     const audio = audioRef.current;
     const updateTime = () => { if (!isDragging) setCurrentTime(audio.currentTime); };
     const updateDuration = () => setDuration(audio.duration || 0);
+    
     audio.addEventListener('timeupdate', updateTime);
     audio.addEventListener('loadedmetadata', updateDuration);
+    
     return () => {
       audio.removeEventListener('timeupdate', updateTime);
       audio.removeEventListener('loadedmetadata', updateDuration);
     };
   }, []);
+
+  // --- ΝΕΟ ΚΟΜΜΑΤΙ: Logic για αυτόματο Next Track ---
+  useEffect(() => {
+    const audio = audioRef.current;
+    
+    const handleEnded = () => {
+      const currentList = view === 'library' ? favorites : tracks;
+      // Βρες το index του τωρινού τραγουδιού
+      const currentIndex = currentList.findIndex(t => t.id === playingTrack?.id);
+      
+      // Υπολογισμός επόμενου (με κύκλο/loop αν φτάσει στο τέλος)
+      if (currentIndex !== -1 && currentList.length > 0) {
+        const nextIndex = (currentIndex + 1) % currentList.length;
+        const nextTrack = currentList[nextIndex];
+        
+        setPlayingTrack(nextTrack);
+        audio.src = nextTrack.preview;
+        audio.playbackRate = playbackRate;
+        audio.play().catch(e => console.log("Auto-play error:", e));
+        setIsPaused(false);
+      }
+    };
+
+    audio.addEventListener('ended', handleEnded);
+    return () => audio.removeEventListener('ended', handleEnded);
+  }, [playingTrack, tracks, favorites, view, playbackRate]);
+  // ---------------------------------------------------
 
   const fetchTrending = async () => {
     try {
@@ -203,13 +232,12 @@ const MusicApp = () => {
                         <span className="text-[10px] font-bold text-zinc-500 uppercase">{track.artist.name}</span>
                       </div>
                     </div>
-                    {/* Αφαιρέθηκε το κείμενο με τις τελείες εδώ */}
                   </div>
                 ))}
               </div>
             )}
           </div>
-          
+           
           <div className="flex items-center gap-8 pr-8">
             <button className="text-white hover:text-[#6366f1] transition-colors font-black text-sm uppercase tracking-widest">
               Install
