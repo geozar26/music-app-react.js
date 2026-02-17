@@ -1,7 +1,8 @@
 Beatstream – High-End Music Streaming App
+
 A modern, high-performance music streaming application built with React and Tailwind CSS. Beatstream leverages the Deezer API to provide users with a seamless discover-to-play experience, featuring advanced audio controls and state persistence.
 
-🚀 Key Technical Features
+ Key Technical Features
 1. Advanced Audio Engine
 Audio API Integration: Built around a persistent HTML5 Audio instance managed via useRef for seamless playback.
 
