@@ -1,70 +1,36 @@
-# Getting Started with Create React App
+Beatstream – High-End Music Streaming App
+A modern, high-performance music streaming application built with React and Tailwind CSS. Beatstream leverages the Deezer API to provide users with a seamless discover-to-play experience, featuring advanced audio controls and state persistence.
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+🚀 Key Technical Features
+1. Advanced Audio Engine
+Audio API Integration: Built around a persistent HTML5 Audio instance managed via useRef for seamless playback.
 
-## Available Scripts
+Custom Scrubbing Logic: A manual "drag-to-scrub" progress bar implementation using mouse event listeners (mousemove, mouseup) and bounding box calculations for precise playback control.
 
-In the project directory, you can run:
+Auto-Queue System: Smart logic that automatically detects the end of a track and triggers the next song based on the current context (Discover or Library).
 
-### `npm start`
+Playback Speed Control: Real-time manipulation of the playbackRate property (0.5x, 1x, 1.5x).
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+2. Search & Discovery Logic
+Real-time Suggestions: Implemented Debouncing logic on the search input to minimize API calls while providing live suggestions.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+Search History Management: A persistent history system that allows users to revisit previous searches, stored via localStorage.
 
-### `npm test`
+Dynamic API Integration: Connected to the Deezer RapidAPI host for fetching trending tracks and searching a global database.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+3. User Experience (UX) & State
+Library & Favorites: Integrated a "Like" system using Redundancy Storage (LocalStorage) so users' favorites persist after page refreshes.
 
-### `npm run build`
+Contextual Menus: Custom-built dropdown menus for track-specific actions (Download simulation, Speed control).
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Responsive UI: A dark-themed, sleek interface using Tailwind CSS with backdrop-blur effects and fluid transitions.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+ Tech Stack
+ 
+ Technology Usage
+ React (Hooks)Core Framework (useState, useEffect, useRef)
+ Tailwind CSS  Premium UI Styling & Glassmorphism effects
+ Axios Asynchronous API requests & Debouncing
+ Lucide React High-quality iconography
+ RapidAPI / Deezer Music metadata and audio previews source
+ LocalStorage API Client-side data persistence
