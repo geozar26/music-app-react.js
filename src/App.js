@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Search, Play, Heart, Music, Library as LibraryIcon, 
@@ -105,16 +104,13 @@ const MusicApp = () => {
     };
   }, []);
 
-  // --- ΝΕΟ ΚΟΜΜΑΤΙ: Logic για αυτόματο Next Track ---
   useEffect(() => {
     const audio = audioRef.current;
     
     const handleEnded = () => {
       const currentList = view === 'library' ? favorites : tracks;
-      // Βρες το index του τωρινού τραγουδιού
       const currentIndex = currentList.findIndex(t => t.id === playingTrack?.id);
       
-      // Υπολογισμός επόμενου (με κύκλο/loop αν φτάσει στο τέλος)
       if (currentIndex !== -1 && currentList.length > 0) {
         const nextIndex = (currentIndex + 1) % currentList.length;
         const nextTrack = currentList[nextIndex];
@@ -130,7 +126,6 @@ const MusicApp = () => {
     audio.addEventListener('ended', handleEnded);
     return () => audio.removeEventListener('ended', handleEnded);
   }, [playingTrack, tracks, favorites, view, playbackRate]);
-  // ---------------------------------------------------
 
   const fetchTrending = async () => {
     try {
@@ -196,6 +191,14 @@ const MusicApp = () => {
           <button onClick={() => setView('history')} className={`flex items-center gap-3 transition-colors ${view === 'history' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}>
             <History size={16} /> <span className="font-bold text-[13px] tracking-widest uppercase">History</span>
           </button>
+          
+          {/* Explore Button */}
+          <button 
+            onClick={() => setView('discover')} 
+            className="mt-2 flex items-center justify-center gap-2 bg-white text-black py-2.5 px-6 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] hover:bg-[#6366f1] hover:text-white transition-all duration-300"
+          >
+            <Zap size={14} fill="currentColor" /> Explore
+          </button>
         </nav>
       </aside>
 
@@ -237,7 +240,7 @@ const MusicApp = () => {
               </div>
             )}
           </div>
-           
+            
           <div className="flex items-center gap-8 pr-8">
             <button className="text-white hover:text-[#6366f1] transition-colors font-black text-sm uppercase tracking-widest">
               Install
@@ -261,7 +264,7 @@ const MusicApp = () => {
               <h2 className="text-[44px] font-black italic tracking-tighter capitalize">{view === 'library' ? 'My Library' : view === 'history' ? 'History' : 'Discover'}</h2>
               {view === 'library' && favorites.length > 0 && (
                  <button onClick={clearLibrary} className="flex items-center gap-2 px-4 py-1.5 bg-[#6366f1]/10 text-[#6366f1] rounded-full border border-[#6366f1]/20 text-[10px] font-black uppercase mt-2">
-                   <Trash2 size={14} /> CLEAR ALL
+                    <Trash2 size={14} /> CLEAR ALL
                  </button>
               )}
             </div>
