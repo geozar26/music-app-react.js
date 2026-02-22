@@ -106,15 +106,12 @@ const MusicApp = () => {
 
   useEffect(() => {
     const audio = audioRef.current;
-    
     const handleEnded = () => {
       const currentList = view === 'library' ? favorites : tracks;
       const currentIndex = currentList.findIndex(t => t.id === playingTrack?.id);
-      
       if (currentIndex !== -1 && currentList.length > 0) {
         const nextIndex = (currentIndex + 1) % currentList.length;
         const nextTrack = currentList[nextIndex];
-        
         setPlayingTrack(nextTrack);
         audio.src = nextTrack.preview;
         audio.playbackRate = playbackRate;
@@ -122,7 +119,6 @@ const MusicApp = () => {
         setIsPaused(false);
       }
     };
-
     audio.addEventListener('ended', handleEnded);
     return () => audio.removeEventListener('ended', handleEnded);
   }, [playingTrack, tracks, favorites, view, playbackRate]);
@@ -179,11 +175,13 @@ const MusicApp = () => {
 
   return (
     <div className="flex min-h-screen bg-[#020205] text-white font-sans select-none" onClick={() => setActiveMenu(null)}>
-      <aside className="w-64 bg-black flex flex-col p-6 border-r border-white/5 shrink-0 h-screen sticky top-0">
+      {/* SIDEBAR */}
+      <aside className="w-64 bg-black flex flex-col p-6 border-r border-white/5 shrink-0 h-screen sticky top-0 overflow-y-auto custom-scrollbar">
         <div className="flex items-center gap-2 mb-10 cursor-pointer" onClick={() => setView('discover')}>
           <Music size={24} className="text-[#6366f1]" />
           <span className="font-black text-xl italic tracking-tighter uppercase">Beatstream</span>
         </div>
+        
         <nav className="flex flex-col gap-4">
           <button onClick={() => setView('library')} className={`flex items-center gap-3 transition-colors ${view === 'library' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}>
             <LibraryIcon size={16} /> <span className="font-bold text-[13px] tracking-widest uppercase">Library</span>
@@ -192,16 +190,49 @@ const MusicApp = () => {
             <History size={16} /> <span className="font-bold text-[13px] tracking-widest uppercase">History</span>
           </button>
           
-          {/* Explore Button */}
           <button 
             onClick={() => setView('discover')} 
             className="mt-2 flex items-center justify-center gap-2 bg-white text-black py-2.5 px-6 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] hover:bg-[#6366f1] hover:text-white transition-all duration-300"
           >
             <Zap size={14} fill="currentColor" /> Explore
           </button>
+
+          {/* NEW QUICK ACCESS CATEGORIES SECTION */}
+          <div className="mt-10 mb-2 px-1">
+            <div className="flex items-center gap-3">
+              <span className="text-[10px] font-black text-white uppercase tracking-[0.3em]">Quick Access</span>
+              <div className="h-[1px] flex-1 bg-gradient-to-r from-white/10 to-transparent"></div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            {[
+              { name: 'Phonk', query: 'phonk', img: 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=200&h=200&fit=crop', filter: 'hue-rotate-[280deg] brightness-75' },
+              { name: 'Lo-Fi', query: 'lofi', img: 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?q=80&w=200&h=200&fit=crop', filter: 'hue-rotate-[150deg] brightness-75' },
+              { name: 'Trap', query: 'trap', img: 'https://images.unsplash.com/photo-1493225255756-d9584f8606e9?q=80&w=200&h=200&fit=crop', filter: 'hue-rotate-[200deg] brightness-75' },
+              { name: 'Pop', query: 'pop', img: 'https://images.unsplash.com/photo-1524368535928-5b5e00ddc76b?q=80&w=200&h=200&fit=crop', filter: 'hue-rotate-[0deg] brightness-75' }
+            ].map((cat) => (
+              <div 
+                key={cat.name}
+                onClick={() => handleSearch(null, cat.query)}
+                className="group relative h-20 rounded-2xl overflow-hidden cursor-pointer border border-white/5 hover:border-[#6366f1]/50 transition-all duration-300"
+              >
+                <img 
+                  src={cat.img} 
+                  className={`w-full h-full object-cover group-hover:scale-110 transition-all duration-500 ${cat.filter}`}
+                  alt={cat.name}
+                />
+                <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors" />
+                <span className="absolute top-3 left-3 text-[9px] font-black uppercase tracking-widest text-white drop-shadow-lg">
+                  {cat.name}
+                </span>
+              </div>
+            ))}
+          </div>
         </nav>
       </aside>
 
+      {/* MAIN CONTENT */}
       <main className="flex-1 flex flex-col relative pb-40">
         <header className="p-4 flex items-center justify-between z-[200] bg-[#020205]/80 backdrop-blur-md sticky top-0">
           <div className="w-[550px] relative" ref={searchRef}>
@@ -242,15 +273,9 @@ const MusicApp = () => {
           </div>
             
           <div className="flex items-center gap-8 pr-8">
-            <button className="text-white hover:text-[#6366f1] transition-colors font-black text-sm uppercase tracking-widest">
-              Install
-            </button>
-            <button className="text-white hover:text-[#6366f1] transition-colors font-black text-sm uppercase tracking-widest">
-              Log In
-            </button>
-            <button className="bg-white text-black px-6 py-2 rounded-full font-black text-sm hover:bg-[#6366f1] hover:text-white transition-all uppercase tracking-widest">
-              Sign Up
-            </button>
+            <button className="text-white hover:text-[#6366f1] transition-colors font-black text-sm uppercase tracking-widest">Install</button>
+            <button className="text-white hover:text-[#6366f1] transition-colors font-black text-sm uppercase tracking-widest">Log In</button>
+            <button className="bg-white text-black px-6 py-2 rounded-full font-black text-sm hover:bg-[#6366f1] hover:text-white transition-all uppercase tracking-widest">Sign Up</button>
           </div>
         </header>
 
@@ -276,12 +301,7 @@ const MusicApp = () => {
                      <div className="flex items-center gap-4 text-zinc-400 group-hover:text-white">
                        <History size={18} /> <span className="font-bold">{h}</span>
                      </div>
-                     <button 
-                        onClick={(e) => removeHistoryItem(e, h)}
-                        className="text-white hover:text-[#6366f1] transition-colors p-1"
-                     >
-                        <X size={18} strokeWidth={2.5} />
-                     </button>
+                     <button onClick={(e) => removeHistoryItem(e, h)} className="text-white hover:text-[#6366f1] transition-colors p-1"><X size={18} strokeWidth={2.5} /></button>
                    </div>
                  ))}
                </div>
@@ -317,24 +337,18 @@ const MusicApp = () => {
                          onClick={(e) => { e.stopPropagation(); toggleFavorite(track); }}
                          className={`cursor-pointer ${favorites.some(f => f.id === track.id) ? "text-[#6366f1] fill-[#6366f1]" : "text-zinc-600 hover:text-white"}`} 
                        />
-                       <button onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === track.id ? null : track.id); }} className="text-zinc-600 hover:text-white">
-                         < MoreVertical size={16} />
-                       </button>
+                       <button onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === track.id ? null : track.id); }} className="text-zinc-600 hover:text-white"><MoreVertical size={16} /></button>
                      </div>
                    </div>
 
                    {activeMenu === track.id && (
                      <div className="absolute bottom-12 right-4 w-40 bg-[#0a0a0a] border border-white/10 rounded-2xl p-2 z-[150] shadow-2xl">
-                       <button className="w-full flex items-center gap-3 px-3 py-2 hover:bg-white/5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
-                         <Download size={14} /> Download
-                       </button>
+                       <button className="w-full flex items-center gap-3 px-3 py-2 hover:bg-white/5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all"><Download size={14} /> Download</button>
                        <div className="h-[1px] bg-white/5 my-1" />
                        <div className="px-3 py-1 text-[9px] font-black text-[#6366f1] uppercase">Speed</div>
                        <div className="flex gap-1 px-2 pb-1">
                          {[0.5, 1, 1.5].map(s => (
-                           <button key={s} onClick={() => changeSpeed(s)} className={`flex-1 py-1 rounded-md text-[10px] font-bold ${playbackRate === s ? 'bg-[#6366f1] text-white' : 'bg-white/5 text-zinc-500'}`}>
-                             {s}x
-                           </button>
+                           <button key={s} onClick={() => changeSpeed(s)} className={`flex-1 py-1 rounded-md text-[10px] font-bold ${playbackRate === s ? 'bg-[#6366f1] text-white' : 'bg-white/5 text-zinc-500'}`}>{s}x</button>
                          ))}
                        </div>
                      </div>
@@ -345,6 +359,7 @@ const MusicApp = () => {
             )}
         </div>
 
+        {/* PLAYER BAR */}
         {playingTrack && (
           <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-[850px] bg-black/90 backdrop-blur-2xl border border-white/10 p-4 rounded-[2.5rem] flex items-center justify-between z-[500] shadow-2xl">
             <div className="flex items-center gap-4 w-[30%]">
