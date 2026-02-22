@@ -20,6 +20,7 @@ const MusicApp = () => {
   const [favorites, setFavorites] = useState([]);
   const [searchHistory, setSearchHistory] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [shouldShowSuggestions, setShouldShowSuggestions] = useState(true);
 
   const audioRef = useRef(new Audio());
   const searchRef = useRef(null);
@@ -71,8 +72,8 @@ const MusicApp = () => {
 
   useEffect(() => {
     const fetchSuggestions = async () => {
-      // Μόνο αν το query έχει αλλάξει από το πληκτρολόγιο θέλουμε suggestions
-      if (searchQuery.trim().length > 0 && view !== 'results') {
+      // Μόνο αν πληκτρολογεί ο χρήστης και το flag είναι true δείχνουμε suggestions
+      if (searchQuery.trim().length > 0 && shouldShowSuggestions) {
         try {
           const res = await axios.get(`https://deezerdevs-deezer.p.rapidapi.com/search?q=${searchQuery}`, API_CONFIG);
           setSuggestions(res.data.data?.slice(0, 6) || []);
@@ -83,7 +84,7 @@ const MusicApp = () => {
     };
     const timeoutId = setTimeout(fetchSuggestions, 200);
     return () => clearTimeout(timeoutId);
-  }, [searchQuery]);
+  }, [searchQuery, shouldShowSuggestions]);
 
   useEffect(() => {
     const savedFavs = JSON.parse(localStorage.getItem('beatstream_favs')) || [];
@@ -136,7 +137,8 @@ const MusicApp = () => {
     const q = queryOverride || searchQuery;
     if (!q.trim()) return;
     
-    // ΚΛΕΙΝΟΥΜΕ ΤΑ SUGGESTIONS ΑΜΕΣΩΣ
+    // Απενεργοποιούμε τα suggestions για αυτή την αναζήτηση
+    setShouldShowSuggestions(false);
     setSuggestions([]);
     
     try {
@@ -180,8 +182,8 @@ const MusicApp = () => {
   return (
     <div className="flex min-h-screen bg-[#020205] text-white font-sans select-none" onClick={() => setActiveMenu(null)}>
       {/* SIDEBAR */}
-      <aside className="w-64 bg-black flex flex-col p-6 border-r border-white/5 shrink-0 h-screen sticky top-0 overflow-y-auto">
-        <div className="flex items-center gap-2 mb-10 cursor-pointer" onClick={() => setView('discover')}>
+      <aside className="w-64 bg-black flex flex-col p-6 border-r border-white/5 shrink-0 h-screen sticky top-0 overflow-y-auto custom-scrollbar">
+        <div className="flex items-center gap-2 mb-8 cursor-pointer" onClick={() => setView('discover')}>
           <Music size={24} className="text-[#6366f1]" />
           <span className="font-black text-xl italic tracking-tighter uppercase">Beatstream</span>
         </div>
@@ -201,8 +203,8 @@ const MusicApp = () => {
             <Zap size={14} fill="currentColor" /> Explore
           </button>
 
-          {/* QUICK ACCESS SECTION */}
-          <div className="mt-10 mb-2 px-1">
+          {/* QUICK ACCESS (Moved Up & Larger Grid) */}
+          <div className="mt-6 mb-3 px-1">
             <div className="flex items-center gap-3">
               <span className="text-[10px] font-black text-white uppercase tracking-[0.3em]">Quick Access</span>
               <div className="h-[1px] flex-1 bg-gradient-to-r from-white/10 to-transparent"></div>
@@ -211,15 +213,15 @@ const MusicApp = () => {
 
           <div className="grid grid-cols-2 gap-3 mb-6">
             {[
-              { name: 'Phonk', query: 'phonk', img: 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=200&h=200&fit=crop', filter: 'hue-rotate-[280deg] brightness-75' },
+              { name: '2026 Hits', query: '2026 hits', img: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=200&h=200&fit=crop', filter: 'hue-rotate-[280deg] brightness-75' },
               { name: 'Lo-Fi', query: 'lofi', img: 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?q=80&w=200&h=200&fit=crop', filter: 'hue-rotate-[150deg] brightness-75' },
               { name: 'Trap', query: 'trap', img: 'https://images.unsplash.com/photo-1493225255756-d9584f8606e9?q=80&w=200&h=200&fit=crop', filter: 'hue-rotate-[200deg] brightness-75' },
-              { name: 'Pop', query: 'pop', img: 'https://images.unsplash.com/photo-1524368535928-5b5e00ddc76b?q=80&w=200&h=200&fit=crop', filter: 'hue-rotate-[0deg] brightness-75' }
+              { name: 'Phonk', query: 'phonk', img: 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=200&h=200&fit=crop', filter: 'hue-rotate-[100deg] brightness-75' }
             ].map((cat) => (
               <div 
                 key={cat.name}
-                onClick={() => handleSearch(null, cat.name)} // Χρήση του name για καθαρό search
-                className="group relative h-20 rounded-2xl overflow-hidden cursor-pointer border border-white/5 hover:border-[#6366f1]/50 transition-all duration-300"
+                onClick={() => handleSearch(null, cat.query)}
+                className="group relative h-24 rounded-2xl overflow-hidden cursor-pointer border border-white/5 hover:border-[#6366f1]/50 transition-all duration-300 shadow-lg"
               >
                 <img 
                   src={cat.img} 
@@ -227,7 +229,7 @@ const MusicApp = () => {
                   alt={cat.name}
                 />
                 <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors" />
-                <span className="absolute top-3 left-3 text-[9px] font-black uppercase tracking-widest text-white drop-shadow-lg">
+                <span className="absolute top-3 left-3 text-[10px] font-black uppercase tracking-tight text-white drop-shadow-xl leading-tight">
                   {cat.name}
                 </span>
               </div>
@@ -247,7 +249,10 @@ const MusicApp = () => {
                 className="w-full bg-[#111111] rounded-xl py-2.5 px-10 outline-none border border-white/5 focus:border-[#6366f1]/40 transition-all pr-12"
                 placeholder="Search..." 
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setShouldShowSuggestions(true); // Επανενεργοποίηση suggestions όταν γράφει ο χρήστης
+                }}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               />
               {searchQuery && (
@@ -259,7 +264,6 @@ const MusicApp = () => {
                 </button>
               )}
             </div>
-            {/* SUGGESTIONS MENU */}
             {suggestions.length > 0 && (
               <div className="absolute top-[calc(100%+10px)] left-0 w-full bg-[#0a0a0a] border border-white/10 rounded-2xl shadow-2xl z-[300] p-2">
                 {suggestions.map((track) => (
