@@ -71,7 +71,8 @@ const MusicApp = () => {
 
   useEffect(() => {
     const fetchSuggestions = async () => {
-      if (searchQuery.trim().length > 0) {
+      // Μόνο αν το query έχει αλλάξει από το πληκτρολόγιο θέλουμε suggestions
+      if (searchQuery.trim().length > 0 && view !== 'results') {
         try {
           const res = await axios.get(`https://deezerdevs-deezer.p.rapidapi.com/search?q=${searchQuery}`, API_CONFIG);
           setSuggestions(res.data.data?.slice(0, 6) || []);
@@ -134,7 +135,10 @@ const MusicApp = () => {
     if (e) e.preventDefault();
     const q = queryOverride || searchQuery;
     if (!q.trim()) return;
+    
+    // ΚΛΕΙΝΟΥΜΕ ΤΑ SUGGESTIONS ΑΜΕΣΩΣ
     setSuggestions([]);
+    
     try {
       const res = await axios.get(`https://deezerdevs-deezer.p.rapidapi.com/search?q=${q}`, API_CONFIG);
       setTracks(res.data.data || []);
@@ -176,7 +180,7 @@ const MusicApp = () => {
   return (
     <div className="flex min-h-screen bg-[#020205] text-white font-sans select-none" onClick={() => setActiveMenu(null)}>
       {/* SIDEBAR */}
-      <aside className="w-64 bg-black flex flex-col p-6 border-r border-white/5 shrink-0 h-screen sticky top-0 overflow-y-auto custom-scrollbar">
+      <aside className="w-64 bg-black flex flex-col p-6 border-r border-white/5 shrink-0 h-screen sticky top-0 overflow-y-auto">
         <div className="flex items-center gap-2 mb-10 cursor-pointer" onClick={() => setView('discover')}>
           <Music size={24} className="text-[#6366f1]" />
           <span className="font-black text-xl italic tracking-tighter uppercase">Beatstream</span>
@@ -197,7 +201,7 @@ const MusicApp = () => {
             <Zap size={14} fill="currentColor" /> Explore
           </button>
 
-          {/* NEW QUICK ACCESS CATEGORIES SECTION */}
+          {/* QUICK ACCESS SECTION */}
           <div className="mt-10 mb-2 px-1">
             <div className="flex items-center gap-3">
               <span className="text-[10px] font-black text-white uppercase tracking-[0.3em]">Quick Access</span>
@@ -214,7 +218,7 @@ const MusicApp = () => {
             ].map((cat) => (
               <div 
                 key={cat.name}
-                onClick={() => handleSearch(null, cat.query)}
+                onClick={() => handleSearch(null, cat.name)} // Χρήση του name για καθαρό search
                 className="group relative h-20 rounded-2xl overflow-hidden cursor-pointer border border-white/5 hover:border-[#6366f1]/50 transition-all duration-300"
               >
                 <img 
@@ -255,6 +259,7 @@ const MusicApp = () => {
                 </button>
               )}
             </div>
+            {/* SUGGESTIONS MENU */}
             {suggestions.length > 0 && (
               <div className="absolute top-[calc(100%+10px)] left-0 w-full bg-[#0a0a0a] border border-white/10 rounded-2xl shadow-2xl z-[300] p-2">
                 {suggestions.map((track) => (
